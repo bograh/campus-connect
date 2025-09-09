@@ -1,0 +1,144 @@
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Home, Package, Car, MessageCircle, User, Settings, LogOut, Shield, Bell, Search, MapPin } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+
+const navigation = [
+  { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Browse Requests", href: "/dashboard/browse", icon: Search },
+  { name: "Browse Trips", href: "/dashboard/browse-trips", icon: Car },
+  { name: "My Requests", href: "/dashboard/requests", icon: Package },
+  { name: "My Trips", href: "/dashboard/trips", icon: Car },
+  { name: "Messages", href: "/dashboard/messages", icon: MessageCircle },
+  { name: "Tracking", href: "/dashboard/tracking", icon: MapPin },
+  { name: "Profile", href: "/dashboard/profile", icon: User },
+]
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const [user] = useState({
+    name: "John Doe",
+    email: "john.doe@university.edu",
+    avatar: "/placeholder.svg?key=oprf7",
+    isVerified: true,
+    studentId: "STU123456",
+  })
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <Sidebar>
+          <SidebarHeader className="border-b border-sidebar-border">
+            <div className="flex items-center gap-2 px-4 py-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">CC</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-semibold text-sidebar-foreground">CampusConnect</span>
+                <span className="text-xs text-sidebar-foreground/60">Student Portal</span>
+              </div>
+            </div>
+          </SidebarHeader>
+
+          <SidebarContent>
+            <SidebarMenu>
+              {navigation.map((item) => (
+                <SidebarMenuItem key={item.name}>
+                  <SidebarMenuButton asChild isActive={pathname === item.href}>
+                    <Link href={item.href} className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+
+          <SidebarFooter className="border-t border-sidebar-border">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start gap-3 h-auto p-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                    <AvatarFallback>
+                      {user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-start text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{user.name}</span>
+                      {user.isVerified && <Shield className="h-3 w-3 text-primary" />}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{user.studentId}</span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarFooter>
+        </Sidebar>
+
+        <div className="flex-1 flex flex-col">
+          <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
+            <div className="flex h-16 items-center gap-4 px-6">
+              <SidebarTrigger />
+              <div className="flex-1" />
+              <Button variant="ghost" size="sm">
+                <Bell className="h-4 w-4" />
+              </Button>
+            </div>
+          </header>
+
+          <main className="flex-1 p-6">{children}</main>
+        </div>
+      </div>
+    </SidebarProvider>
+  )
+}
