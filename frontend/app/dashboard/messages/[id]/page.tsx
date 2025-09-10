@@ -1,11 +1,16 @@
-import { ChatInterface } from "@/components/chat/chat-interface"
+import { ChatInterface } from "@/components/chat/chat-interface";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 
 interface ChatPageProps {
   params: {
-    id: string
-  }
+    id: string;
+  };
 }
 
 export default function ChatPage({ params }: ChatPageProps) {
-  return <ChatInterface conversationId={params.id} />
+  return (
+    <DashboardLayout>
+      <ChatInterface conversationId={params.id} />
+    </DashboardLayout>
+  );
 }
