@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"campus-connect/internal/auth"
 	"campus-connect/internal/middleware"
@@ -18,6 +19,7 @@ type AuthHandler struct {
 	userRepo    repositories.UserRepository
 	authService *auth.AuthService
 	cloudinary  *services.CloudinaryService
+	verifier    *services.VerificationService
 }
 
 func NewAuthHandler(userRepo repositories.UserRepository, authService *auth.AuthService) *AuthHandler {
@@ -29,6 +31,11 @@ func NewAuthHandler(userRepo repositories.UserRepository, authService *auth.Auth
 
 func (h *AuthHandler) WithCloudinary(cld *services.CloudinaryService) *AuthHandler {
 	h.cloudinary = cld
+	return h
+}
+
+func (h *AuthHandler) WithVerifier(v *services.VerificationService) *AuthHandler {
+	h.verifier = v
 	return h
 }
 
@@ -83,15 +90,15 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.authService.GenerateToken(user)
-	if err != nil {
-		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Failed to generate token")
-		return
+	// Send verification code via Brevo and store in Redis (if configured)
+	if h.verifier != nil {
+		code := generateNumericCode(6)
+		_ = h.verifier.StoreCode(r.Context(), strings.ToLower(user.Email), code, 10*time.Minute)
+		_ = h.verifier.SendVerificationEmail(user.Email, user.FirstName+" "+user.LastName, code)
 	}
 
 	response := map[string]interface{}{
-		"message": "User created successfully",
-		"token":   token,
+		"message": "User created successfully. Please verify your email.",
 		"user": map[string]interface{}{
 			"id":                 user.ID,
 			"firstName":          user.FirstName,
@@ -150,6 +157,51 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	utils.WriteSuccessResponse(w, "Logout successful", nil)
+}
+
+type verifyEmailRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
+	if h.verifier == nil {
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Verification service not configured")
+		return
+	}
+
+	var req verifyEmailRequest
+	if err := utils.DecodeAndValidate(r, &req); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	ok, err := h.verifier.ValidateCode(r.Context(), strings.ToLower(req.Email), req.Code)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Verification failed")
+		return
+	}
+	if !ok {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid or expired verification code")
+		return
+	}
+
+	// Mark user as verified (using VerificationStatus existing field)
+	user, err := h.userRepo.GetByEmail(req.Email)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusNotFound, "User not found")
+		return
+	}
+	user.VerificationStatus = models.VerificationApproved
+	if err := h.userRepo.Update(user); err != nil {
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Failed to update user")
+		return
+	}
+
+	utils.WriteSuccessResponse(w, "Email verified successfully", map[string]interface{}{
+		"userId": user.ID,
+		"email":  user.Email,
+	})
 }
 
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
@@ -275,4 +327,16 @@ func (h *AuthHandler) UploadVerificationDocument(w http.ResponseWriter, r *http.
 		"url":     url,
 		"docType": docType,
 	})
+}
+
+// simple numeric code generator
+func generateNumericCode(length int) string {
+	digits := "0123456789"
+	b := make([]byte, length)
+	now := time.Now().UnixNano()
+	for i := 0; i < length; i++ {
+		idx := int((now >> uint(i*3)) % 10)
+		b[i] = digits[idx]
+	}
+	return string(b)
 }

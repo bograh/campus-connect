@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/cors"
 
 	"campus-connect/internal/auth"
+	"campus-connect/internal/config"
 	"campus-connect/internal/database"
 	"campus-connect/internal/handlers"
 	"campus-connect/internal/middleware"
@@ -41,7 +42,19 @@ func SetupRoutes(
 	deliveryRepo := repositories.NewDeliveryRepository(db)
 	tripRepo := repositories.NewTripRepository(db)
 
-	authHandler := handlers.NewAuthHandler(userRepo, authService).WithCloudinary(cloudinaryService)
+	cfg, _ := config.Load()
+	verificationService := services.NewVerificationService(
+		cfg.Redis.Addr,
+		cfg.Redis.Password,
+		cfg.Redis.DB,
+		cfg.Brevo.APIKey,
+		cfg.Brevo.SenderName,
+		cfg.Brevo.SenderEmail,
+	)
+
+	authHandler := handlers.NewAuthHandler(userRepo, authService).
+		WithCloudinary(cloudinaryService).
+		WithVerifier(verificationService)
 	deliveryHandler := handlers.NewDeliveryHandler(deliveryRepo, tripRepo)
 	tripHandler := handlers.NewTripHandler(tripRepo)
 
@@ -58,6 +71,7 @@ func SetupRoutes(
 			r.Post("/signup", authHandler.SignUp)
 			r.Post("/signin", authHandler.SignIn)
 			r.Post("/logout", authHandler.Logout)
+			r.Post("/verify-email", authHandler.VerifyEmail)
 
 			r.Group(func(r chi.Router) {
 				r.Use(authMiddleware.RequireAuth)

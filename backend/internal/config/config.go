@@ -15,6 +15,8 @@ type Config struct {
 	Database   database.Config
 	JWT        JWTConfig
 	Cloudinary services.CloudinaryConfig
+	Redis      RedisConfig
+	Brevo      BrevoConfig
 }
 
 type ServerConfig struct {
@@ -27,8 +29,20 @@ type JWTConfig struct {
 	Secret string
 }
 
+type RedisConfig struct {
+	Addr     string
+	Password string
+	DB       int
+}
+
+type BrevoConfig struct {
+	APIKey      string
+	SenderName  string
+	SenderEmail string
+}
+
 func Load() (*Config, error) {
-	// Load .env file if it exists (for development)
+
 	_ = godotenv.Load()
 
 	config := &Config{
@@ -53,6 +67,16 @@ func Load() (*Config, error) {
 			APIKey:    getEnv("CLOUDINARY_API_KEY", ""),
 			APISecret: getEnv("CLOUDINARY_API_SECRET", ""),
 		},
+		Redis: RedisConfig{
+			Addr:     getEnv("REDIS_ADDR", "127.0.0.1:6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvAsInt("REDIS_DB", 0),
+		},
+		Brevo: BrevoConfig{
+			APIKey:      getEnv("BREVO_API_KEY", ""),
+			SenderName:  getEnv("BREVO_SENDER_NAME", "CampusConnect"),
+			SenderEmail: getEnv("BREVO_SENDER_EMAIL", "no-reply@campusconnect.knust.edu.gh"),
+		},
 	}
 
 	return config, nil
@@ -68,15 +92,6 @@ func getEnv(key, defaultValue string) string {
 func getEnvAsInt(key string, defaultValue int) int {
 	if valueStr := os.Getenv(key); valueStr != "" {
 		if value, err := strconv.Atoi(valueStr); err == nil {
-			return value
-		}
-	}
-	return defaultValue
-}
-
-func getEnvAsBool(key string, defaultValue bool) bool {
-	if valueStr := os.Getenv(key); valueStr != "" {
-		if value, err := strconv.ParseBool(valueStr); err == nil {
 			return value
 		}
 	}
