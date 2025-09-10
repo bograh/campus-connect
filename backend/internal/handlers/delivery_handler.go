@@ -43,14 +43,18 @@ func (h *DeliveryHandler) CreateDeliveryRequest(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// Parse pickup date and time
-	pickupDateTime, err := time.Parse("2006-01-02T15:04:05", req.PickupDate+"T"+req.PickupTime+":00")
+	var pickupDateTime time.Time
+	var err error
+
+	pickupDateTime, err = time.Parse("2006-01-02T15:04:05", req.PickupDate+"T"+req.PickupTime+":00")
 	if err != nil {
-		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid pickup date or time format")
-		return
+		pickupDateTime, err = time.Parse("2006-01-02T15:04", req.PickupDate+"T"+req.PickupTime)
+		if err != nil {
+			utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid pickup date or time format. Expected YYYY-MM-DD and HH:mm")
+			return
+		}
 	}
 
-	// Create delivery request
 	deliveryRequest := &models.DeliveryRequest{
 		ID:                  uuid.New(),
 		UserID:              user.ID,

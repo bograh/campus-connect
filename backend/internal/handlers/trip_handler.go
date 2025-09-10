@@ -41,10 +41,20 @@ func (h *TripHandler) CreateTrip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	departureDateTime, err := time.Parse("2006-01-02T15:04:05", req.DepartureDate+"T"+req.DepartureTime+":00")
+	// Parse departure date and time
+	// Handle both HH:mm and HH:mm:ss formats
+	var departureDateTime time.Time
+	var err error
+
+	// First try with seconds (HH:mm:ss format)
+	departureDateTime, err = time.Parse("2006-01-02T15:04:05", req.DepartureDate+"T"+req.DepartureTime+":00")
 	if err != nil {
-		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid departure date or time format")
-		return
+		// If that fails, try without seconds (HH:mm format)
+		departureDateTime, err = time.Parse("2006-01-02T15:04", req.DepartureDate+"T"+req.DepartureTime)
+		if err != nil {
+			utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid departure date or time format. Expected YYYY-MM-DD and HH:mm")
+			return
+		}
 	}
 
 	trip := &models.Trip{
