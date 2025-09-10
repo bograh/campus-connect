@@ -35,6 +35,18 @@ type User struct {
 	UpdatedAt          time.Time          `json:"updatedAt" db:"updated_at"`
 }
 
+type VerificationDocument struct {
+	ID        uuid.UUID `json:"id" db:"id"`
+	UserID    uuid.UUID `json:"userId" db:"user_id"`
+	DocType   string    `json:"docType" db:"doc_type"`
+	URL       string    `json:"url" db:"url"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+}
+
+type UploadVerificationDocRequest struct {
+	DocType string `json:"docType" validate:"required,oneof=student_id selfie other"`
+}
+
 type CreateUserRequest struct {
 	FirstName        string  `json:"firstName" validate:"required"`
 	LastName         string  `json:"lastName" validate:"required"`

@@ -8,6 +8,7 @@ import (
 	"campus-connect/internal/middleware"
 	"campus-connect/internal/models"
 	"campus-connect/internal/repositories"
+	"campus-connect/internal/services"
 	"campus-connect/internal/utils"
 
 	"github.com/google/uuid"
@@ -16,6 +17,7 @@ import (
 type AuthHandler struct {
 	userRepo    repositories.UserRepository
 	authService *auth.AuthService
+	cloudinary  *services.CloudinaryService
 }
 
 func NewAuthHandler(userRepo repositories.UserRepository, authService *auth.AuthService) *AuthHandler {
@@ -23,6 +25,11 @@ func NewAuthHandler(userRepo repositories.UserRepository, authService *auth.Auth
 		userRepo:    userRepo,
 		authService: authService,
 	}
+}
+
+func (h *AuthHandler) WithCloudinary(cld *services.CloudinaryService) *AuthHandler {
+	h.cloudinary = cld
+	return h
 }
 
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
@@ -33,6 +40,11 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		} else {
 			utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid request body")
 		}
+		return
+	}
+
+	if !strings.HasSuffix(strings.ToLower(req.Email), "@st.knust.edu.gh") {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Only KNUST student emails (@st.knust.edu.gh) are allowed")
 		return
 	}
 
@@ -81,8 +93,8 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		Name:     "auth-token",
 		Value:    token,
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 		MaxAge:   7 * 24 * 60 * 60,
 		Path:     "/",
 	})
@@ -134,8 +146,8 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		Name:     "auth-token",
 		Value:    token,
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 		MaxAge:   7 * 24 * 60 * 60,
 		Path:     "/",
 	})
@@ -159,8 +171,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Name:     "auth-token",
 		Value:    "",
 		HttpOnly: true,
-		Secure:   r.TLS != nil,
-		SameSite: http.SameSiteStrictMode,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 		MaxAge:   0,
 		Path:     "/",
 	})
@@ -244,4 +256,51 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteSuccessResponse(w, "Profile updated successfully", response)
+}
+
+func (h *AuthHandler) UploadVerificationDocument(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.GetUserFromContext(r)
+	if !ok {
+		utils.WriteErrorResponse(w, http.StatusUnauthorized, "User not found in context")
+		return
+	}
+
+	if h.cloudinary == nil {
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Cloudinary service not configured")
+		return
+	}
+
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid multipart form data")
+		return
+	}
+
+	docType := r.FormValue("docType")
+	if docType == "" {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "docType is required")
+		return
+	}
+
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "file is required")
+		return
+	}
+	file.Close()
+
+	url, err := h.cloudinary.UploadFromMultipartFile(header, user.ID.String())
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Failed to upload document")
+		return
+	}
+
+	if err := h.userRepo.AddVerificationDocument(user.ID, docType, url); err != nil {
+		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Failed to save document record")
+		return
+	}
+
+	utils.WriteSuccessResponse(w, "Verification document uploaded", map[string]interface{}{
+		"url":     url,
+		"docType": docType,
+	})
 }

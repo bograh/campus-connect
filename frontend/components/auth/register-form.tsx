@@ -9,21 +9,24 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Mail, Lock, User, Upload } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [step, setStep] = useState(1);
-  const { register } = useAuth();
+  const { signUp, loading, error, clearError, uploadVerificationDocument } =
+    useAuth();
   const router = useRouter();
+
+  const [studentIdFile, setStudentIdFile] = useState<File | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
 
     const formData = new FormData(e.currentTarget);
     const fullName = formData.get("fullName") as string;
@@ -31,50 +34,40 @@ export function RegisterForm() {
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
-    // Basic validation
-    if (!email.endsWith(".edu")) {
-      setError("Please use your school email address (.edu)");
-      setIsLoading(false);
-      return;
+    clearError();
+
+    if (!email.endsWith("@st.knust.edu.gh")) {
+      console.warn("Only KNUST student emails (@st.knust.edu.gh) are allowed");
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
+      alert("Passwords do not match");
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      setIsLoading(false);
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long");
       return;
     }
 
-    // Parse full name
     const nameParts = fullName.trim().split(" ");
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(" ") || "";
 
     try {
-      const result = await register({
+      await signUp({
         firstName,
         lastName,
         email,
         password,
-        studentId: email.split("@")[0], // Use email prefix as student ID for demo
-        phoneNumber: "+233123456789", // Default phone number for demo
-        gender: "other", // Default gender
+        studentId: email.split("@")[0],
+        phoneNumber: "+233123456789",
+        gender: "Male",
       });
 
-      if (result.success) {
-        setStep(2); // Move to verification step
-      } else {
-        setError(result.error || "Registration failed");
-      }
+      setStep(2);
     } catch (error) {
-      setError("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
+      console.error("Registration error:", error);
     }
   };
 
@@ -100,6 +93,7 @@ export function RegisterForm() {
               type="file"
               accept="image/*,.pdf"
               className="cursor-pointer"
+              onChange={(e) => setStudentIdFile(e.target.files?.[0] || null)}
             />
           </div>
 
@@ -111,18 +105,63 @@ export function RegisterForm() {
               type="file"
               accept="image/*"
               className="cursor-pointer"
+              onChange={(e) => setSelfieFile(e.target.files?.[0] || null)}
             />
           </div>
 
           <div className="flex items-center space-x-2">
-            <Checkbox id="terms" />
+            <Checkbox
+              id="terms"
+              className="border-primary"
+              onCheckedChange={(checked) => setTermsAccepted(!!checked)}
+            />
             <Label htmlFor="terms" className="text-sm">
               I agree to the terms of service and privacy policy
             </Label>
           </div>
         </div>
 
-        <Button className="w-full">Submit for Verification</Button>
+        {verifyError && (
+          <Alert variant="destructive">
+            <AlertDescription>{verifyError}</AlertDescription>
+          </Alert>
+        )}
+
+        <Button
+          className="w-full"
+          disabled={
+            verifying || !termsAccepted || (!studentIdFile && !selfieFile)
+          }
+          onClick={async () => {
+            if (!termsAccepted) {
+              setVerifyError("Please accept the terms to continue");
+              return;
+            }
+            if (!studentIdFile && !selfieFile) {
+              setVerifyError("Please select at least one file to upload");
+              return;
+            }
+            setVerifyError("");
+            setVerifying(true);
+            try {
+              if (studentIdFile) {
+                await uploadVerificationDocument("student_id", studentIdFile);
+              }
+              if (selfieFile) {
+                await uploadVerificationDocument("selfie", selfieFile);
+              }
+              router.push("/dashboard");
+            } catch (e) {
+              setVerifyError(
+                "Failed to submit verification. Please try again."
+              );
+            } finally {
+              setVerifying(false);
+            }
+          }}
+        >
+          {verifying ? "Submitting..." : "Submit for Verification"}
+        </Button>
 
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
@@ -157,14 +196,14 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="email">School Email</Label>
+        <Label htmlFor="email">KNUST Student Email</Label>
         <div className="relative">
           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             id="email"
             name="email"
             type="email"
-            placeholder="your.name@university.edu"
+            placeholder="your.name@st.knust.edu.gh"
             className="pl-10"
             required
           />
@@ -214,8 +253,8 @@ export function RegisterForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Creating Account..." : "Create Account"}
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Creating Account..." : "Create Account"}
       </Button>
     </form>
   );

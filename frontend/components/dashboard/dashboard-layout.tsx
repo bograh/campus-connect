@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -26,7 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Home, Package, Car, MessageCircle, User, Settings, LogOut, Shield, Bell, Search, MapPin } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuth } from "@/lib/hooks"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -41,13 +41,35 @@ const navigation = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [user] = useState({
-    name: "John Doe",
-    email: "john.doe@university.edu",
-    avatar: "/placeholder.svg?key=oprf7",
-    isVerified: true,
-    studentId: "STU123456",
-  })
+  const router = useRouter()
+  const { user, logout, loading } = useAuth()
+
+  if (!loading && !user) {
+    router.push("/login")
+    return null
+  }
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) return null
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push("/")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
 
   return (
     <SidebarProvider>
@@ -85,18 +107,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start gap-3 h-auto p-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                    <AvatarImage src={user.profileImage || "/placeholder.svg"} alt={`${user.firstName} ${user.lastName}`} />
                     <AvatarFallback>
-                      {user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                      {user.firstName[0]}{user.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{user.name}</span>
-                      {user.isVerified && <Shield className="h-3 w-3 text-primary" />}
+                      <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                      {user.verificationStatus === "approved" && <Shield className="h-3 w-3 text-primary" />}
                     </div>
                     <span className="text-xs text-muted-foreground">{user.studentId}</span>
                   </div>
@@ -116,7 +135,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </DropdownMenuItem>

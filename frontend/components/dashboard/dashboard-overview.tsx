@@ -1,5 +1,6 @@
 "use client"
 
+import { useAuth, useDeliveryRequests, useMyTrips } from "@/lib/hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -8,31 +9,49 @@ import { Package, Car, MessageCircle, Star, Clock, MapPin, Plus, TrendingUp, Shi
 import Link from "next/link"
 
 export function DashboardOverview() {
+  const { user, loading: authLoading } = useAuth()
+  const { requests, loading: requestsLoading } = useDeliveryRequests({ page: 1, limit: 5, autoLoad: false })
+  const { myTrips, loading: tripsLoading } = useMyTrips()
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const activeRequests = requests.filter(r => r.status === "pending").length
+  const completedTrips = myTrips.filter(t => t.status === "completed").length
+
   const stats = [
     {
-      title: "Active Requests",
-      value: "3",
-      description: "Pending deliveries",
+      title: "Total Deliveries",
+      value: user.totalDeliveries.toString(),
+      description: "Completed",
       icon: Package,
       color: "text-blue-600",
     },
     {
-      title: "Completed Trips",
-      value: "12",
-      description: "This month",
+      title: "My Trips",
+      value: myTrips.length.toString(),
+      description: "Created",
       icon: Car,
       color: "text-green-600",
     },
     {
       title: "Messages",
-      value: "5",
+      value: "0",
       description: "Unread",
       icon: MessageCircle,
       color: "text-orange-600",
     },
     {
       title: "Rating",
-      value: "4.8",
+      value: user.rating.toFixed(1),
       description: "Average rating",
       icon: Star,
       color: "text-yellow-600",
@@ -91,13 +110,16 @@ export function DashboardOverview() {
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, John!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.firstName}!</h1>
           <p className="text-muted-foreground">Here's what's happening with your deliveries today.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="gap-1">
+          <Badge 
+            variant={user.verificationStatus === "approved" ? "secondary" : "outline"} 
+            className="gap-1"
+          >
             <Shield className="h-3 w-3" />
-            Verified Student
+            {user.verificationStatus === "approved" ? "Verified Student" : `Verification ${user.verificationStatus}`}
           </Badge>
         </div>
       </div>
@@ -229,24 +251,30 @@ export function DashboardOverview() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Deliveries Completed</span>
-                <span>12/15</span>
+                <span>Total Deliveries</span>
+                <span>{user.totalDeliveries}</span>
               </div>
-              <Progress value={80} className="h-2" />
+              <Progress value={Math.min((user.totalDeliveries / 20) * 100, 100)} className="h-2" />
+              <p className="text-xs text-muted-foreground">Lifetime total</p>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>On-Time Rate</span>
-                <span>95%</span>
+                <span>Verification Status</span>
+                <span className="capitalize">{user.verificationStatus}</span>
               </div>
-              <Progress value={95} className="h-2" />
+              <Progress 
+                value={user.verificationStatus === "approved" ? 100 : user.verificationStatus === "pending" ? 50 : 0} 
+                className="h-2" 
+              />
+              <p className="text-xs text-muted-foreground">Account verification</p>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Customer Rating</span>
-                <span>4.8/5.0</span>
+                <span>Rating</span>
+                <span>{user.rating.toFixed(1)}/5.0</span>
               </div>
-              <Progress value={96} className="h-2" />
+              <Progress value={(user.rating / 5) * 100} className="h-2" />
+              <p className="text-xs text-muted-foreground">Average user rating</p>
             </div>
           </div>
         </CardContent>

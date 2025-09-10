@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useMyTrips } from "@/lib/hooks"
-import type { Trip, TripStatus, TransportMethod } from "@/lib/types/api"
+import { useTrips } from "@/lib/hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,11 +15,11 @@ export function MyTrips() {
   const [filter, setFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   
-  const { myTrips, loading, error, loadMyTrips } = useMyTrips()
+  const { myTrips, loading, error, loadMyTrips } = useTrips()
 
   const filteredTrips = useMemo(() => {
     if (!myTrips) return []
-    return myTrips.filter((trip: Trip) => {
+    return myTrips.filter((trip) => {
       const matchesFilter = filter === "all" || trip.status === filter
       const matchesSearch =
         trip.fromLocation.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -30,7 +29,7 @@ export function MyTrips() {
     })
   }, [myTrips, filter, searchQuery])
 
-  const getStatusVariant = (status: TripStatus) => {
+  const getStatusVariant = (status: keyof typeof TRIP_STATUS) => {
     const colors = {
       active: "default" as const,
       completed: "secondary" as const,
@@ -125,7 +124,7 @@ export function MyTrips() {
 
       {/* Trips List */}
       <div className="space-y-4">
-        {filteredTrips.map((trip: Trip) => (
+        {filteredTrips.map((trip) => (
           <Card key={trip.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -135,7 +134,7 @@ export function MyTrips() {
                       {trip.fromLocation} → {trip.toLocation}
                     </CardTitle>
                     <Badge variant={getStatusVariant(trip.status)}>
-                      {TRIP_STATUS[trip.status as keyof typeof TRIP_STATUS]?.label || trip.status}
+                      {TRIP_STATUS[trip.status]?.label || trip.status}
                     </Badge>
                   </div>
                   <CardDescription>
@@ -169,7 +168,7 @@ export function MyTrips() {
                 <div className="flex items-center gap-2 text-sm">
                   <Car className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">Transport:</span> 
-                  {TRANSPORT_METHODS[trip.transportMethod as keyof typeof TRANSPORT_METHODS]?.label || trip.transportMethod}
+                  {TRANSPORT_METHODS[trip.transportMethod]?.label || trip.transportMethod}
                 </div>
               </div>
 
@@ -209,7 +208,7 @@ export function MyTrips() {
                 ? "You haven't created any trips yet."
                 : filter === "all"
                 ? "No trips match your search criteria."
-                : `No trips with status "${filter !== "all" ? (TRIP_STATUS[filter as keyof typeof TRIP_STATUS]?.label || filter) : ""}" found.`}
+                : `No trips with status "${TRIP_STATUS[filter as keyof typeof TRIP_STATUS]?.label || filter}" found.`}
             </p>
             <Link href="/dashboard/trips/new">
               <Button>

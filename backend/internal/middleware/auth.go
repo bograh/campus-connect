@@ -26,6 +26,10 @@ func NewAuthMiddleware(authService *auth.AuthService) *AuthMiddleware {
 
 func (am *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
 		var tokenString string
 
 		if cookie, err := r.Cookie("auth-token"); err == nil {

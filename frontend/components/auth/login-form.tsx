@@ -8,43 +8,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const { login } = useAuth();
+  const { signIn, loading, error, clearError } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
+    
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    // Basic validation
-    if (!email.endsWith(".edu")) {
-      setError("Please use your school email address (.edu)");
-      setIsLoading(false);
-      return;
+    // Clear any existing errors
+    clearError();
+
+    // Basic validation for KNUST email
+    if (!email.endsWith("@st.knust.edu.gh")) {
+      // This will be handled by the API, but we can provide early feedback
+      console.warn("Only KNUST student emails (@st.knust.edu.gh) are allowed");
     }
 
     try {
-      const result = await login(email, password);
-      if (result.success) {
-        router.push("/dashboard");
-      } else {
-        setError(result.error || "Login failed");
-      }
+      await signIn({ email, password });
+      router.push("/dashboard");
     } catch (error) {
-      setError("An unexpected error occurred");
-    } finally {
-      setIsLoading(false);
+      // Error is already handled by the useAuth hook
+      console.error("Login error:", error);
     }
   };
 
@@ -57,14 +50,14 @@ export function LoginForm() {
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="email">School Email</Label>
+        <Label htmlFor="email">KNUST Student Email</Label>
         <div className="relative">
           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             id="email"
             name="email"
             type="email"
-            placeholder="your.name@university.edu"
+            placeholder="your.name@st.knust.edu.gh"
             className="pl-10"
             required
           />
@@ -99,8 +92,8 @@ export function LoginForm() {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Signing in..." : "Sign In"}
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Signing in..." : "Sign In"}
       </Button>
     </form>
   );

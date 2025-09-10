@@ -17,6 +17,8 @@ type UserRepository interface {
 	GetByStudentID(studentID string) (*models.User, error)
 	Update(user *models.User) error
 	UpdateProfile(userID uuid.UUID, updates *models.UpdateProfileRequest) (*models.User, error)
+	AddVerificationDocument(userID uuid.UUID, docType string, url string) error
+	ListVerificationDocuments(userID uuid.UUID) ([]*models.VerificationDocument, error)
 }
 
 type userRepository struct {
@@ -157,7 +159,6 @@ func (r *userRepository) Update(user *models.User) error {
 }
 
 func (r *userRepository) UpdateProfile(userID uuid.UUID, updates *models.UpdateProfileRequest) (*models.User, error) {
-	// Build dynamic query based on non-nil fields
 	setParts := []string{}
 	args := []interface{}{userID}
 	argIndex := 2
@@ -194,7 +195,6 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, updates *models.UpdateP
 	}
 
 	if len(setParts) == 0 {
-		// No updates to make, just return current user
 		return r.GetByID(userID)
 	}
 
@@ -208,7 +208,6 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, updates *models.UpdateP
 				  profile_image, created_at, updated_at`,
 		fmt.Sprintf("%s", setParts[0:]))
 
-	// Join the setParts properly
 	if len(setParts) > 1 {
 		setClause := setParts[0]
 		for i := 1; i < len(setParts); i++ {
@@ -239,4 +238,46 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, updates *models.UpdateP
 	}
 
 	return user, nil
+}
+
+func (r *userRepository) AddVerificationDocument(userID uuid.UUID, docType string, url string) error {
+	query := `
+		INSERT INTO user_verification_documents (user_id, doc_type, url)
+		VALUES ($1, $2, $3)`
+	_, err := r.db.Exec(query, userID, docType, url)
+	if err != nil {
+		return fmt.Errorf("failed to add verification document: %w", err)
+	}
+
+	_, err = r.db.Exec("UPDATE users SET verification_status = 'pending' WHERE id = $1", userID)
+	if err != nil {
+		return fmt.Errorf("failed to update verification status: %w", err)
+	}
+	return nil
+}
+
+func (r *userRepository) ListVerificationDocuments(userID uuid.UUID) ([]*models.VerificationDocument, error) {
+	query := `
+		SELECT id, user_id, doc_type, url, created_at
+		FROM user_verification_documents
+		WHERE user_id = $1
+		ORDER BY created_at DESC`
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list verification documents: %w", err)
+	}
+	defer rows.Close()
+
+	var docs []*models.VerificationDocument
+	for rows.Next() {
+		doc := &models.VerificationDocument{}
+		if err := rows.Scan(&doc.ID, &doc.UserID, &doc.DocType, &doc.URL, &doc.CreatedAt); err != nil {
+			return nil, fmt.Errorf("failed to scan verification document: %w", err)
+		}
+		docs = append(docs, doc)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating verification documents: %w", err)
+	}
+	return docs, nil
 }
