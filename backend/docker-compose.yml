@@ -1,43 +1,19 @@
 version: "3.8"
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: campus_connect
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # Go Backend API
   api:
     build: .
     ports:
       - "8080:8080"
     environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=campus_connect
-      - DB_SSL_MODE=disable
-      - JWT_SECRET=your-development-jwt-secret-key
-      - GO_ENV=development
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_SSL_MODE=${DB_SSL_MODE:-require}
+      - JWT_SECRET=${JWT_SECRET}
+      - GO_ENV=${GO_ENV:-production}
     volumes:
       - .:/app
     command: ["./main"]
-
-volumes:
-  postgres_data:
