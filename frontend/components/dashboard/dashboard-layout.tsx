@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,7 +48,7 @@ const navigation = [
   { name: "My Requests", href: "/dashboard/requests", icon: Package },
   { name: "My Trips", href: "/dashboard/trips", icon: Car },
   { name: "Messages", href: "/dashboard/messages", icon: MessageCircle },
-  { name: "Tracking", href: "/dashboard/tracking", icon: MapPin },
+  // { name: "Tracking", href: "/dashboard/tracking", icon: MapPin },
   { name: "Profile", href: "/dashboard/profile", icon: User },
 ];
 
@@ -57,6 +58,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, loading } = useAuth();
   const hasToken =
     typeof window !== "undefined" && !!localStorage.getItem("auth_token");
+
+  useEffect(() => {
+    if (!loading && typeof window !== "undefined" && !user && hasToken) {
+      localStorage.removeItem("auth_token");
+      router.push("/login");
+    }
+  }, [loading, user, hasToken, router]);
 
   if (!loading && !user && !hasToken) {
     router.push("/login");
@@ -74,18 +82,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && hasToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">
-            Restoring your session...
-          </p>
-        </div>
-      </div>
-    );
-  }
   if (!user) return null;
 
   const handleLogout = async () => {

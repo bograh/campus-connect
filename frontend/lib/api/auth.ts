@@ -70,6 +70,19 @@ export class AuthService {
   }
 
   /**
+   * Verify email using the code sent to the user's inbox
+   */
+  async verifyEmail(
+    email: string,
+    code: string
+  ): Promise<{ userId: string; email: string }> {
+    return apiClient.post<{ userId: string; email: string }>(
+      "/api/auth/verify-email",
+      { email, code }
+    );
+  }
+
+  /**
    * Logout user and clear authentication token
    */
   async logout(): Promise<{ message: string }> {

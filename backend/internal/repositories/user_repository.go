@@ -17,6 +17,7 @@ type UserRepository interface {
 	GetByStudentID(studentID string) (*models.User, error)
 	Update(user *models.User) error
 	UpdateProfile(userID uuid.UUID, updates *models.UpdateProfileRequest) (*models.User, error)
+	SetVerificationStatus(userID uuid.UUID, status models.VerificationStatus) error
 	AddVerificationDocument(userID uuid.UUID, docType string, url string) error
 	ListVerificationDocuments(userID uuid.UUID) ([]*models.VerificationDocument, error)
 }
@@ -238,6 +239,19 @@ func (r *userRepository) UpdateProfile(userID uuid.UUID, updates *models.UpdateP
 	}
 
 	return user, nil
+}
+
+func (r *userRepository) SetVerificationStatus(userID uuid.UUID, status models.VerificationStatus) error {
+	query := `
+		UPDATE users 
+		SET verification_status = $2
+		WHERE id = $1`
+
+	_, err := r.db.Exec(query, userID, status)
+	if err != nil {
+		return fmt.Errorf("failed to update verification status: %w", err)
+	}
+	return nil
 }
 
 func (r *userRepository) AddVerificationDocument(userID uuid.UUID, docType string, url string) error {

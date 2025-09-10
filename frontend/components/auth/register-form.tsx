@@ -8,22 +8,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Lock, User, Upload } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, KeyRound } from "lucide-react";
 import { useAuth } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1);
-  const { signUp, loading, error, clearError, uploadVerificationDocument } =
-    useAuth();
+  const { signUp, loading, error, clearError, verifyEmail } = useAuth();
   const router = useRouter();
 
-  const [studentIdFile, setStudentIdFile] = useState<File | null>(null);
-  const [selfieFile, setSelfieFile] = useState<File | null>(null);
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -64,7 +62,7 @@ export function RegisterForm() {
         phoneNumber: "+233123456789",
         gender: "Male",
       });
-
+      setRegisteredEmail(email);
       setStep(2);
     } catch (error) {
       console.error("Registration error:", error);
@@ -76,48 +74,29 @@ export function RegisterForm() {
       <div className="space-y-6">
         <div className="text-center">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Upload className="w-8 h-8 text-primary" />
+            <KeyRound className="w-8 h-8 text-primary" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">Verify Your Identity</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            Enter Verification Code
+          </h3>
           <p className="text-sm text-muted-foreground">
-            Upload your student ID and a selfie for verification
+            We emailed a 6 digit code to {registeredEmail}
           </p>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="studentId">Student ID Document</Label>
+            <Label htmlFor="code">Verification Code</Label>
             <Input
-              id="studentId"
-              name="studentId"
-              type="file"
-              accept="image/*,.pdf"
-              className="cursor-pointer"
-              onChange={(e) => setStudentIdFile(e.target.files?.[0] || null)}
+              id="code"
+              name="code"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="Enter 6-digit code"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="selfie">Selfie Photo</Label>
-            <Input
-              id="selfie"
-              name="selfie"
-              type="file"
-              accept="image/*"
-              className="cursor-pointer"
-              onChange={(e) => setSelfieFile(e.target.files?.[0] || null)}
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="terms"
-              className="border-primary"
-              onCheckedChange={(checked) => setTermsAccepted(!!checked)}
-            />
-            <Label htmlFor="terms" className="text-sm">
-              I agree to the terms of service and privacy policy
-            </Label>
           </div>
         </div>
 
@@ -129,43 +108,28 @@ export function RegisterForm() {
 
         <Button
           className="w-full"
-          disabled={
-            verifying || !termsAccepted || (!studentIdFile && !selfieFile)
-          }
+          disabled={verifying || verificationCode.trim().length === 0}
           onClick={async () => {
-            if (!termsAccepted) {
-              setVerifyError("Please accept the terms to continue");
-              return;
-            }
-            if (!studentIdFile && !selfieFile) {
-              setVerifyError("Please select at least one file to upload");
-              return;
-            }
             setVerifyError("");
             setVerifying(true);
             try {
-              if (studentIdFile) {
-                await uploadVerificationDocument("student_id", studentIdFile);
-              }
-              if (selfieFile) {
-                await uploadVerificationDocument("selfie", selfieFile);
-              }
+              await verifyEmail(registeredEmail, verificationCode.trim());
               router.push("/dashboard");
             } catch (e) {
               setVerifyError(
-                "Failed to submit verification. Please try again."
+                "Verification failed. Please check the code and try again."
               );
             } finally {
               setVerifying(false);
             }
           }}
         >
-          {verifying ? "Submitting..." : "Submit for Verification"}
+          {verifying ? "Verifying..." : "Verify Email"}
         </Button>
 
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
-            Your documents will be reviewed within 24 hours
+            Code expires in 10 minutes
           </p>
         </div>
       </div>

@@ -148,6 +148,22 @@ export function useAuth() {
     }
   };
 
+  const verifyEmail = async (email: string, code: string) => {
+    try {
+      setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      await authService.verifyEmail(email, code);
+      await loadUser();
+    } catch (error) {
+      const errorMessage = handleApiError(error);
+      setAuthState((prev) => ({
+        ...prev,
+        loading: false,
+        error: errorMessage,
+      }));
+      throw error;
+    }
+  };
+
   const isAuthenticated = !!authState.user;
   const isVerified = authState.user?.verificationStatus === "approved";
 
@@ -162,6 +178,7 @@ export function useAuth() {
     logout,
     updateProfile,
     uploadVerificationDocument,
+    verifyEmail,
     loadUser,
     clearError,
   };

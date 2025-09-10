@@ -1,24 +1,40 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { MapPin, Clock, Users, ArrowLeft, AlertCircle, DollarSign } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { useTrips } from "@/lib/hooks";
+import { handleApiError } from "@/lib/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  MapPin,
+  Clock,
+  Users,
+  ArrowLeft,
+  AlertCircle,
+  DollarSign,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function NewTripForm() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { createTrip } = useTrips({ autoLoad: false });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -35,15 +51,19 @@ export function NewTripForm() {
     specialRequirements: "",
     isRecurring: false,
     recurringDays: [] as string[],
-  })
+  });
 
   const vehicleTypes = [
     { value: "car", label: "Car", description: "Standard passenger vehicle" },
     { value: "suv", label: "SUV", description: "Larger vehicle, more space" },
-    { value: "truck", label: "Pickup Truck", description: "Best for large items" },
+    {
+      value: "truck",
+      label: "Pickup Truck",
+      description: "Best for large items",
+    },
     { value: "bike", label: "Bicycle", description: "Small items only" },
     { value: "walking", label: "Walking", description: "Very small items" },
-  ]
+  ];
 
   const categories = [
     "Food & Beverages",
@@ -53,7 +73,7 @@ export function NewTripForm() {
     "Electronics",
     "Clothing",
     "Documents",
-  ]
+  ];
 
   const weekDays = [
     { value: "monday", label: "Monday" },
@@ -63,53 +83,86 @@ export function NewTripForm() {
     { value: "friday", label: "Friday" },
     { value: "saturday", label: "Saturday" },
     { value: "sunday", label: "Sunday" },
-  ]
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     // Basic validation
-    if (!formData.title || !formData.fromLocation || !formData.toLocation || !formData.departureDate) {
-      setError("Please fill in all required fields")
-      setIsLoading(false)
-      return
+    if (
+      !formData.title ||
+      !formData.fromLocation ||
+      !formData.toLocation ||
+      !formData.departureDate
+    ) {
+      setError("Please fill in all required fields");
+      setIsLoading(false);
+      return;
     }
 
     if (formData.capacity && Number.parseInt(formData.capacity) < 1) {
-      setError("Capacity must be at least 1")
-      setIsLoading(false)
-      return
+      setError("Capacity must be at least 1");
+      setIsLoading(false);
+      return;
     }
 
     if (formData.pricePerItem && Number.parseFloat(formData.pricePerItem) < 0) {
-      setError("Price per item must be positive")
-      setIsLoading(false)
-      return
+      setError("Price per item must be positive");
+      setIsLoading(false);
+      return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      console.log("Creating trip:", formData)
-      router.push("/dashboard/trips")
-    }, 1000)
-  }
+    try {
+      // Map UI to API payload (see API_USAGE.md)
+      const availableSeats = formData.capacity
+        ? parseInt(formData.capacity)
+        : 1;
+      const pricePerDelivery = formData.pricePerItem
+        ? parseFloat(formData.pricePerItem)
+        : 0;
+      // Map vehicleType UI -> backend enum
+      const vt = (formData.vehicleType || "car").toLowerCase();
+      const vehicleType =
+        vt === "bike" ? "bicycle" : vt === "suv" || vt === "truck" ? "car" : vt;
 
-  const handleInputChange = (field: string, value: string | boolean | string[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+      await createTrip({
+        fromLocation: formData.fromLocation,
+        toLocation: formData.toLocation,
+        departureDate: formData.departureDate,
+        departureTime: formData.departureTime,
+        availableSeats,
+        pricePerDelivery,
+        vehicleType: vehicleType as any,
+        description: formData.description || undefined,
+        contactInfo: "Contact via app",
+      });
+
+      router.push("/dashboard/trips");
+    } catch (err) {
+      setError(handleApiError(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (
+    field: string,
+    value: string | boolean | string[]
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleCategoryToggle = (category: string) => {
-    const categoryKey = category.toLowerCase().replace(/\s+/g, "-")
+    const categoryKey = category.toLowerCase().replace(/\s+/g, "-");
     setFormData((prev) => ({
       ...prev,
       acceptedCategories: prev.acceptedCategories.includes(categoryKey)
         ? prev.acceptedCategories.filter((c) => c !== categoryKey)
         : [...prev.acceptedCategories, categoryKey],
-    }))
-  }
+    }));
+  };
 
   const handleRecurringDayToggle = (day: string) => {
     setFormData((prev) => ({
@@ -117,8 +170,8 @@ export function NewTripForm() {
       recurringDays: prev.recurringDays.includes(day)
         ? prev.recurringDays.filter((d) => d !== day)
         : [...prev.recurringDays, day],
-    }))
-  }
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -131,7 +184,9 @@ export function NewTripForm() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-foreground">Share a Trip</h1>
-          <p className="text-muted-foreground">Create a trip and help other students with deliveries</p>
+          <p className="text-muted-foreground">
+            Create a trip and help other students with deliveries
+          </p>
         </div>
       </div>
 
@@ -147,7 +202,9 @@ export function NewTripForm() {
         <Card>
           <CardHeader>
             <CardTitle>Trip Information</CardTitle>
-            <CardDescription>Provide details about your trip route and schedule</CardDescription>
+            <CardDescription>
+              Provide details about your trip route and schedule
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -167,7 +224,9 @@ export function NewTripForm() {
                 id="description"
                 placeholder="Describe your trip route, any stops, and what types of deliveries you can handle..."
                 value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 rows={3}
               />
             </div>
@@ -182,7 +241,9 @@ export function NewTripForm() {
                     placeholder="e.g., Main Campus - Student Union"
                     className="pl-10"
                     value={formData.fromLocation}
-                    onChange={(e) => handleInputChange("fromLocation", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("fromLocation", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -197,7 +258,9 @@ export function NewTripForm() {
                     placeholder="e.g., Downtown Shopping District"
                     className="pl-10"
                     value={formData.toLocation}
-                    onChange={(e) => handleInputChange("toLocation", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("toLocation", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -210,7 +273,9 @@ export function NewTripForm() {
         <Card>
           <CardHeader>
             <CardTitle>Schedule</CardTitle>
-            <CardDescription>Set your departure and return times</CardDescription>
+            <CardDescription>
+              Set your departure and return times
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -223,7 +288,9 @@ export function NewTripForm() {
                     type="date"
                     className="pl-10"
                     value={formData.departureDate}
-                    onChange={(e) => handleInputChange("departureDate", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("departureDate", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -238,7 +305,9 @@ export function NewTripForm() {
                     type="time"
                     className="pl-10"
                     value={formData.departureTime}
-                    onChange={(e) => handleInputChange("departureTime", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("departureTime", e.target.value)
+                    }
                     required
                   />
                 </div>
@@ -253,7 +322,9 @@ export function NewTripForm() {
                     type="date"
                     className="pl-10"
                     value={formData.returnDate}
-                    onChange={(e) => handleInputChange("returnDate", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("returnDate", e.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -267,7 +338,9 @@ export function NewTripForm() {
                     type="time"
                     className="pl-10"
                     value={formData.returnTime}
-                    onChange={(e) => handleInputChange("returnTime", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("returnTime", e.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -278,7 +351,9 @@ export function NewTripForm() {
                 <Checkbox
                   id="isRecurring"
                   checked={formData.isRecurring}
-                  onCheckedChange={(checked) => handleInputChange("isRecurring", checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("isRecurring", checked as boolean)
+                  }
                 />
                 <Label htmlFor="isRecurring">This is a recurring trip</Label>
               </div>
@@ -288,11 +363,16 @@ export function NewTripForm() {
                   <Label>Recurring Days</Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {weekDays.map((day) => (
-                      <div key={day.value} className="flex items-center space-x-2">
+                      <div
+                        key={day.value}
+                        className="flex items-center space-x-2"
+                      >
                         <Checkbox
                           id={day.value}
                           checked={formData.recurringDays.includes(day.value)}
-                          onCheckedChange={() => handleRecurringDayToggle(day.value)}
+                          onCheckedChange={() =>
+                            handleRecurringDayToggle(day.value)
+                          }
                         />
                         <Label htmlFor={day.value} className="text-sm">
                           {day.label}
@@ -310,7 +390,9 @@ export function NewTripForm() {
         <Card>
           <CardHeader>
             <CardTitle>Vehicle & Capacity</CardTitle>
-            <CardDescription>Specify your transportation method and delivery capacity</CardDescription>
+            <CardDescription>
+              Specify your transportation method and delivery capacity
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
@@ -324,14 +406,20 @@ export function NewTripForm() {
                         ? "border-primary bg-primary/5"
                         : "border-border hover:bg-muted/50"
                     }`}
-                    onClick={() => handleInputChange("vehicleType", vehicle.value)}
+                    onClick={() =>
+                      handleInputChange("vehicleType", vehicle.value)
+                    }
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium">{vehicle.label}</div>
-                        <div className="text-sm text-muted-foreground">{vehicle.description}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {vehicle.description}
+                        </div>
                       </div>
-                      {formData.vehicleType === vehicle.value && <Badge variant="secondary">Selected</Badge>}
+                      {formData.vehicleType === vehicle.value && (
+                        <Badge variant="secondary">Selected</Badge>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -350,7 +438,9 @@ export function NewTripForm() {
                     placeholder="Number of items you can carry"
                     className="pl-10"
                     value={formData.capacity}
-                    onChange={(e) => handleInputChange("capacity", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("capacity", e.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -367,7 +457,9 @@ export function NewTripForm() {
                     placeholder="0.00"
                     className="pl-10"
                     value={formData.pricePerItem}
-                    onChange={(e) => handleInputChange("pricePerItem", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("pricePerItem", e.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -379,22 +471,26 @@ export function NewTripForm() {
         <Card>
           <CardHeader>
             <CardTitle>Accepted Item Categories</CardTitle>
-            <CardDescription>Select what types of items you're willing to deliver</CardDescription>
+            <CardDescription>
+              Select what types of items you're willing to deliver
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-2">
               {categories.map((category) => {
-                const categoryKey = category.toLowerCase().replace(/\s+/g, "-")
+                const categoryKey = category.toLowerCase().replace(/\s+/g, "-");
                 return (
                   <div key={category} className="flex items-center space-x-2">
                     <Checkbox
                       id={categoryKey}
-                      checked={formData.acceptedCategories.includes(categoryKey)}
+                      checked={formData.acceptedCategories.includes(
+                        categoryKey
+                      )}
                       onCheckedChange={() => handleCategoryToggle(category)}
                     />
                     <Label htmlFor={categoryKey}>{category}</Label>
                   </div>
-                )
+                );
               })}
             </div>
           </CardContent>
@@ -404,7 +500,9 @@ export function NewTripForm() {
         <Card>
           <CardHeader>
             <CardTitle>Special Requirements</CardTitle>
-            <CardDescription>Any special conditions or requirements for your trip</CardDescription>
+            <CardDescription>
+              Any special conditions or requirements for your trip
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -413,7 +511,9 @@ export function NewTripForm() {
                 id="specialRequirements"
                 placeholder="e.g., No fragile items, cash payment preferred, meet at specific location..."
                 value={formData.specialRequirements}
-                onChange={(e) => handleInputChange("specialRequirements", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("specialRequirements", e.target.value)
+                }
                 rows={3}
               />
             </div>
@@ -433,5 +533,5 @@ export function NewTripForm() {
         </div>
       </form>
     </div>
-  )
+  );
 }

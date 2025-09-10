@@ -90,15 +90,17 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Send verification code via Brevo and store in Redis (if configured)
 	if h.verifier != nil {
 		code := generateNumericCode(6)
 		_ = h.verifier.StoreCode(r.Context(), strings.ToLower(user.Email), code, 10*time.Minute)
 		_ = h.verifier.SendVerificationEmail(user.Email, user.FirstName+" "+user.LastName, code)
 	}
 
+	signupToken, _ := h.authService.GenerateToken(user)
+
 	response := map[string]interface{}{
 		"message": "User created successfully. Please verify your email.",
+		"token":   signupToken,
 		"user": map[string]interface{}{
 			"id":                 user.ID,
 			"firstName":          user.FirstName,
@@ -131,6 +133,12 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.authService.ComparePassword(req.Password, user.Password); err != nil {
 		utils.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid email or password")
+		return
+	}
+
+	// Require verified email
+	if user.VerificationStatus != models.VerificationApproved {
+		utils.WriteErrorResponse(w, http.StatusForbidden, "Please verify your email")
 		return
 	}
 
@@ -186,14 +194,13 @@ func (h *AuthHandler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Mark user as verified (using VerificationStatus existing field)
+	// Mark user as verified
 	user, err := h.userRepo.GetByEmail(req.Email)
 	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusNotFound, "User not found")
 		return
 	}
-	user.VerificationStatus = models.VerificationApproved
-	if err := h.userRepo.Update(user); err != nil {
+	if err := h.userRepo.SetVerificationStatus(user.ID, models.VerificationApproved); err != nil {
 		utils.WriteErrorResponse(w, http.StatusInternalServerError, "Failed to update user")
 		return
 	}

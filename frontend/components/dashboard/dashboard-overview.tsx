@@ -35,9 +35,7 @@ export function DashboardOverview() {
   const { myTrips, loading: tripsLoading } = useMyTrips();
 
   useEffect(() => {
-    // Load a small set of recent public delivery requests
     loadDeliveryRequests(1, 5);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (authLoading || !user) {
