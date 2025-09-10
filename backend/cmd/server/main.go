@@ -41,7 +41,7 @@ func main() {
 		log.Println("Warning: Cloudinary credentials not provided, image uploads will not work")
 	}
 
-	handler := routes.SetupRoutes(db, authService, cloudinaryService)
+	handler := routes.SetupRoutes(db, authService, cloudinaryService, cfg)
 
 	serverAddr := cfg.Server.Host + ":" + cfg.Server.Port
 	log.Printf("Starting server on %s", serverAddr)

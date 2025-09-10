@@ -21,6 +21,7 @@ func SetupRoutes(
 	db *database.DB,
 	authService *auth.AuthService,
 	cloudinaryService *services.CloudinaryService,
+	cfg *config.Config,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -42,7 +43,6 @@ func SetupRoutes(
 	deliveryRepo := repositories.NewDeliveryRepository(db)
 	tripRepo := repositories.NewTripRepository(db)
 
-	cfg, _ := config.Load()
 	verificationService := services.NewVerificationService(
 		cfg.Redis.Addr,
 		cfg.Redis.Password,

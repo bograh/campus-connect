@@ -56,20 +56,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, loading } = useAuth();
-  const hasToken =
-    typeof window !== "undefined" && !!localStorage.getItem("auth_token");
 
   useEffect(() => {
-    if (!loading && typeof window !== "undefined" && !user && hasToken) {
-      localStorage.removeItem("auth_token");
+    if (typeof window === "undefined") return;
+
+    const hasToken = !!localStorage.getItem("auth_token");
+
+    if (!loading && !user && !hasToken) {
       router.push("/login");
     }
-  }, [loading, user, hasToken, router]);
-
-  if (!loading && !user && !hasToken) {
-    router.push("/login");
-    return null;
-  }
+  }, [loading, user, router]);
 
   if (loading) {
     return (
@@ -80,6 +76,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
+  }
+
+  if (typeof window !== "undefined") {
+    const hasToken = !!localStorage.getItem("auth_token");
+    if (!user && !hasToken) {
+      router.push("/login");
+      return null;
+    }
   }
 
   if (!user) return null;

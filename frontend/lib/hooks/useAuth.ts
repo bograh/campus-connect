@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { authService, handleApiError } from "@/lib/api";
+import { authService, handleApiError, ApiError } from "@/lib/api";
 import type {
   User,
   CreateUserRequest,
@@ -29,11 +29,22 @@ export function useAuth() {
   const loadUser = async () => {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("auth_token")
+          : null;
+      if (!token) {
+        setAuthState((prev) => ({ ...prev, user: null, loading: false }));
+        return;
+      }
       const user = await authService.getCurrentUser();
       setAuthState((prev) => ({ ...prev, user, loading: false }));
     } catch (error) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("auth_token");
+      console.error("loadUser failed:", error);
+      if (error instanceof ApiError && error.status === 401) {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth_token");
+        }
       }
       setAuthState((prev) => ({
         ...prev,
