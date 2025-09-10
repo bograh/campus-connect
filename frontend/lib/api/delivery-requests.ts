@@ -34,10 +34,17 @@ export class DeliveryRequestsService {
       searchParams.limit = params.limit.toString();
     }
 
-    return apiClient.get<PaginatedDeliveryRequests>(
+    const response = await apiClient.get<PaginatedDeliveryRequests>(
       "/api/delivery-requests",
       searchParams
     );
+
+    return {
+      deliveryRequests: response?.deliveryRequests || [],
+      totalRequests: response?.totalRequests || 0,
+      currentPage: response?.currentPage || 1,
+      totalPages: response?.totalPages || 1,
+    };
   }
 
   /**

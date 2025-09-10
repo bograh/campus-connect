@@ -44,12 +44,16 @@ export function useTrips(options: UseTripsOptions = {}) {
   // Load trips
   const loadTrips = async (pageNum?: number, limitNum?: number) => {
     try {
+      console.log("useTrips: Loading trips", { pageNum, limitNum });
       setState((prev) => ({ ...prev, loading: true, error: null }));
       const data = await tripsService.getTrips({
         page: pageNum || page,
         limit: limitNum || limit,
       });
 
+      console.log("useTrips: Loaded successfully", {
+        count: data?.trips?.length || 0,
+      });
       setState((prev) => ({
         ...prev,
         trips: data.trips,
@@ -59,6 +63,7 @@ export function useTrips(options: UseTripsOptions = {}) {
         loading: false,
       }));
     } catch (error) {
+      console.error("useTrips: Load failed", error);
       setState((prev) => ({
         ...prev,
         loading: false,
@@ -181,7 +186,6 @@ export function useTrips(options: UseTripsOptions = {}) {
   };
 }
 
-// Hook for managing user's own trips
 export function useMyTrips() {
   const [state, setState] = useState<MyTripsState>({
     myTrips: [],
@@ -189,14 +193,12 @@ export function useMyTrips() {
     error: null,
   });
 
-  // Load user's trips
   const loadMyTrips = async () => {
     try {
       console.log("useMyTrips: Loading user trips");
       setState((prev) => ({ ...prev, loading: true, error: null }));
       const trips = await tripsService.getMyTrips();
 
-      console.log("useMyTrips: Loaded successfully", { count: trips.length });
       setState((prev) => ({
         ...prev,
         myTrips: trips,

@@ -32,7 +32,17 @@ export class TripsService {
       searchParams.limit = params.limit.toString();
     }
 
-    return apiClient.get<PaginatedTrips>("/api/trips", searchParams);
+    const response = await apiClient.get<PaginatedTrips>(
+      "/api/trips",
+      searchParams
+    );
+
+    return {
+      trips: response?.trips || [],
+      totalTrips: response?.totalTrips || 0,
+      currentPage: response?.currentPage || 1,
+      totalPages: response?.totalPages || 1,
+    };
   }
 
   /**
@@ -64,7 +74,8 @@ export class TripsService {
    * Requires authentication
    */
   async getMyTrips(): Promise<Trip[]> {
-    return apiClient.get<Trip[]>("/api/trips/my-trips");
+    const response = await apiClient.get<Trip[]>("/api/trips/my-trips");
+    return Array.isArray(response) ? response : [];
   }
 
   /**

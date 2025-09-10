@@ -49,7 +49,7 @@ export function useDeliveryRequests(options: UseDeliveryRequestsOptions = {}) {
       });
 
       console.log("useDeliveryRequests: Loaded successfully", {
-        count: data.deliveryRequests.length,
+        count: data?.deliveryRequests?.length || 0,
       });
       setState((prev) => ({
         ...prev,

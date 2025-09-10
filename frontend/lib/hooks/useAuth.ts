@@ -24,6 +24,19 @@ export function useAuth() {
 
   useEffect(() => {
     loadUser();
+
+    const timeout = setTimeout(() => {
+      if (authState.loading) {
+        console.log("useAuth: Timeout reached, stopping loading");
+        setAuthState((prev) => ({
+          ...prev,
+          loading: false,
+          error: "Authentication timeout. Please try signing in again.",
+        }));
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const loadUser = async () => {
