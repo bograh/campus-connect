@@ -1,43 +1,65 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { useMyTrips } from "@/lib/hooks"
-import type { Trip, TripStatus, TransportMethod } from "@/lib/types/api"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Car, MapPin, Clock, Search, Filter, Plus, Eye, Loader2 } from "lucide-react"
-import Link from "next/link"
-import { TRIP_STATUS, TRANSPORT_METHODS } from "@/lib/constants/api"
+import { useState, useMemo } from "react";
+import { useMyTrips } from "@/lib/hooks";
+import type { Trip, TripStatus, TransportMethod } from "@/lib/types/api";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Car,
+  MapPin,
+  Clock,
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Loader2,
+} from "lucide-react";
+import Link from "next/link";
+import { TRIP_STATUS, TRANSPORT_METHODS } from "@/lib/constants/api";
 
 export function MyTrips() {
-  const [filter, setFilter] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
-  
-  const { myTrips, loading, error, loadMyTrips } = useMyTrips()
+  const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { myTrips, loading, error, loadMyTrips } = useMyTrips();
 
   const filteredTrips = useMemo(() => {
-    if (!myTrips) return []
+    if (!myTrips) return [];
     return myTrips.filter((trip: Trip) => {
-      const matchesFilter = filter === "all" || trip.status === filter
+      const matchesFilter = filter === "all" || trip.status === filter;
       const matchesSearch =
         trip.fromLocation.toLowerCase().includes(searchQuery.toLowerCase()) ||
         trip.toLocation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (trip.description && trip.description.toLowerCase().includes(searchQuery.toLowerCase()))
-      return matchesFilter && matchesSearch
-    })
-  }, [myTrips, filter, searchQuery])
+        (trip.description &&
+          trip.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesFilter && matchesSearch;
+    });
+  }, [myTrips, filter, searchQuery]);
 
   const getStatusVariant = (status: TripStatus) => {
     const colors = {
       active: "default" as const,
       completed: "secondary" as const,
       cancelled: "destructive" as const,
-    }
-    return colors[status] || "secondary"
-  }
+    };
+    return colors[status] || "secondary";
+  };
 
   if (loading) {
     return (
@@ -47,7 +69,7 @@ export function MyTrips() {
           <p className="mt-4 text-muted-foreground">Loading your trips...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -56,7 +78,9 @@ export function MyTrips() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">My Trips</h1>
-            <p className="text-muted-foreground">Manage your delivery trips and track earnings</p>
+            <p className="text-muted-foreground">
+              Manage your delivery trips and track earnings
+            </p>
           </div>
           <Link href="/dashboard/trips/new">
             <Button>
@@ -76,7 +100,7 @@ export function MyTrips() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -84,7 +108,9 @@ export function MyTrips() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">My Trips</h1>
-          <p className="text-muted-foreground">Manage your delivery trips and track earnings</p>
+          <p className="text-muted-foreground">
+            Manage your delivery trips and track earnings
+          </p>
         </div>
         <Link href="/dashboard/trips/new">
           <Button>
@@ -135,7 +161,8 @@ export function MyTrips() {
                       {trip.fromLocation} → {trip.toLocation}
                     </CardTitle>
                     <Badge variant={getStatusVariant(trip.status)}>
-                      {TRIP_STATUS[trip.status as keyof typeof TRIP_STATUS]?.label || trip.status}
+                      {TRIP_STATUS[trip.status as keyof typeof TRIP_STATUS]
+                        ?.label || trip.status}
                     </Badge>
                   </div>
                   <CardDescription>
@@ -164,19 +191,23 @@ export function MyTrips() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Departure:</span> {new Date(trip.departureTime).toLocaleString()}
+                  <span className="font-medium">Departure:</span>{" "}
+                  {new Date(trip.departureTime).toLocaleString()}
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Car className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">Transport:</span> 
-                  {TRANSPORT_METHODS[trip.transportMethod as keyof typeof TRANSPORT_METHODS]?.label || trip.transportMethod}
+                  <span className="font-medium">Transport:</span>
+                  {TRANSPORT_METHODS[
+                    trip.transportMethod as keyof typeof TRANSPORT_METHODS
+                  ]?.label || trip.transportMethod}
                 </div>
               </div>
 
               {trip.contactInfo && (
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="text-sm">
-                    <span className="font-medium">Contact info:</span> {trip.contactInfo}
+                    <span className="font-medium">Contact info:</span>{" "}
+                    {trip.contactInfo}
                   </div>
                 </div>
               )}
@@ -205,16 +236,23 @@ export function MyTrips() {
             <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">No trips found</h3>
             <p className="text-muted-foreground mb-4">
-              {myTrips.length === 0
+              {(myTrips?.length ?? 0) === 0
                 ? "You haven't created any trips yet."
                 : filter === "all"
                 ? "No trips match your search criteria."
-                : `No trips with status "${filter !== "all" ? (TRIP_STATUS[filter as keyof typeof TRIP_STATUS]?.label || filter) : ""}" found.`}
+                : `No trips with status "${
+                    filter !== "all"
+                      ? TRIP_STATUS[filter as keyof typeof TRIP_STATUS]
+                          ?.label || filter
+                      : ""
+                  }" found.`}
             </p>
             <Link href="/dashboard/trips/new">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                {myTrips.length === 0 ? "Create Your First Trip" : "Create New Trip"}
+                {(myTrips?.length ?? 0) === 0
+                  ? "Create Your First Trip"
+                  : "Create New Trip"}
               </Button>
             </Link>
           </CardContent>
@@ -230,5 +268,5 @@ export function MyTrips() {
         </Card>
       )}
     </div>
-  )
+  );
 }
