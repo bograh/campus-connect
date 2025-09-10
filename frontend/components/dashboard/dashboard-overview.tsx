@@ -1,17 +1,44 @@
-"use client"
+"use client";
 
-import { useAuth, useDeliveryRequests, useMyTrips } from "@/lib/hooks"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Package, Car, MessageCircle, Star, Clock, MapPin, Plus, TrendingUp, Shield } from "lucide-react"
-import Link from "next/link"
+import { useAuth, useDeliveryRequests, useMyTrips } from "@/lib/hooks";
+import { useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import {
+  Package,
+  Car,
+  MessageCircle,
+  Star,
+  Clock,
+  MapPin,
+  Plus,
+  TrendingUp,
+  Shield,
+} from "lucide-react";
+import Link from "next/link";
 
 export function DashboardOverview() {
-  const { user, loading: authLoading } = useAuth()
-  const { requests, loading: requestsLoading } = useDeliveryRequests({ page: 1, limit: 5, autoLoad: false })
-  const { myTrips, loading: tripsLoading } = useMyTrips()
+  const { user, loading: authLoading } = useAuth();
+  const {
+    requests,
+    loading: requestsLoading,
+    loadDeliveryRequests,
+  } = useDeliveryRequests({ page: 1, limit: 5, autoLoad: false });
+  const { myTrips, loading: tripsLoading } = useMyTrips();
+
+  useEffect(() => {
+    // Load a small set of recent public delivery requests
+    loadDeliveryRequests(1, 5);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (authLoading || !user) {
     return (
@@ -21,11 +48,15 @@ export function DashboardOverview() {
           <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  const activeRequests = requests.filter(r => r.status === "pending").length
-  const completedTrips = myTrips.filter(t => t.status === "completed").length
+  const activeRequests = requests
+    ? requests.filter((r) => r.status === "pending").length
+    : 0;
+  const completedTrips = myTrips
+    ? myTrips.filter((t) => t.status === "completed").length
+    : 0;
 
   const stats = [
     {
@@ -37,7 +68,7 @@ export function DashboardOverview() {
     },
     {
       title: "My Trips",
-      value: myTrips.length.toString(),
+      value: (myTrips ? myTrips.length : 0).toString(),
       description: "Created",
       icon: Car,
       color: "text-green-600",
@@ -56,70 +87,34 @@ export function DashboardOverview() {
       icon: Star,
       color: "text-yellow-600",
     },
-  ]
+  ];
 
-  const recentRequests = [
-    {
-      id: "REQ001",
-      title: "Textbook Delivery",
-      from: "Library",
-      to: "Dorm Room 204",
-      status: "pending",
-      time: "2 hours ago",
-      requester: "Sarah Johnson",
-    },
-    {
-      id: "REQ002",
-      title: "Lunch Pickup",
-      from: "Campus Cafeteria",
-      to: "Engineering Building",
-      status: "matched",
-      time: "4 hours ago",
-      requester: "Mike Chen",
-    },
-    {
-      id: "REQ003",
-      title: "Package from Mail Center",
-      from: "Student Mail Center",
-      to: "Apartment Complex",
-      status: "in-progress",
-      time: "1 day ago",
-      requester: "Emma Davis",
-    },
-  ]
-
-  const upcomingTrips = [
-    {
-      id: "TRIP001",
-      route: "Campus → Downtown",
-      time: "Today, 3:00 PM",
-      capacity: "2/4 items",
-      earnings: "$15",
-    },
-    {
-      id: "TRIP002",
-      route: "Library → Dorms",
-      time: "Tomorrow, 10:00 AM",
-      capacity: "1/3 items",
-      earnings: "$8",
-    },
-  ]
+  const recentRequests = (requests || []).slice(0, 5);
+  const upcomingTrips = (myTrips || []).slice(0, 5);
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user.firstName}!</h1>
-          <p className="text-muted-foreground">Here's what's happening with your deliveries today.</p>
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome back, {user.firstName}!
+          </h1>
+          <p className="text-muted-foreground">
+            Here's what's happening with your deliveries today.
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge 
-            variant={user.verificationStatus === "approved" ? "secondary" : "outline"} 
+          <Badge
+            variant={
+              user.verificationStatus === "approved" ? "secondary" : "outline"
+            }
             className="gap-1"
           >
             <Shield className="h-3 w-3" />
-            {user.verificationStatus === "approved" ? "Verified Student" : `Verification ${user.verificationStatus}`}
+            {user.verificationStatus === "approved"
+              ? "Verified Student"
+              : `Verification ${user.verificationStatus}`}
           </Badge>
         </div>
       </div>
@@ -129,12 +124,16 @@ export function DashboardOverview() {
         {stats.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {stat.title}
+              </CardTitle>
               <stat.icon className={`h-4 w-4 ${stat.color}`} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {stat.description}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -144,7 +143,9 @@ export function DashboardOverview() {
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Get started with your next delivery or trip</CardDescription>
+          <CardDescription>
+            Get started with your next delivery or trip
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
@@ -155,7 +156,10 @@ export function DashboardOverview() {
               </Button>
             </Link>
             <Link href="/dashboard/trips/new">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2 bg-transparent">
+              <Button
+                variant="outline"
+                className="w-full h-20 flex-col gap-2 bg-transparent"
+              >
                 <Car className="h-6 w-6" />
                 Share a Trip
               </Button>
@@ -173,17 +177,22 @@ export function DashboardOverview() {
           </CardHeader>
           <CardContent className="space-y-4">
             {recentRequests.map((request) => (
-              <div key={request.id} className="flex items-center gap-4 p-3 border rounded-lg">
+              <div
+                key={request.id}
+                className="flex items-center gap-4 p-3 border rounded-lg"
+              >
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium">{request.title}</h4>
+                    <h4 className="font-medium">{request.itemDescription}</h4>
                     <Badge
                       variant={
                         request.status === "pending"
                           ? "secondary"
                           : request.status === "matched"
-                            ? "default"
-                            : "outline"
+                          ? "default"
+                          : request.status === "in_transit"
+                          ? "outline"
+                          : "outline"
                       }
                     >
                       {request.status}
@@ -191,11 +200,14 @@ export function DashboardOverview() {
                   </div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <MapPin className="h-3 w-3" />
-                    {request.from} → {request.to}
+                    {request.pickupLocation} → {request.dropoffLocation}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {request.time} • by {request.requester}
+                    {new Date(request.createdAt).toLocaleString()}
+                    {request.requesterName
+                      ? ` • by ${request.requesterName}`
+                      : null}
                   </div>
                 </div>
               </div>
@@ -216,16 +228,25 @@ export function DashboardOverview() {
           </CardHeader>
           <CardContent className="space-y-4">
             {upcomingTrips.map((trip) => (
-              <div key={trip.id} className="flex items-center gap-4 p-3 border rounded-lg">
+              <div
+                key={trip.id}
+                className="flex items-center gap-4 p-3 border rounded-lg"
+              >
                 <div className="flex-1 space-y-1">
-                  <h4 className="font-medium">{trip.route}</h4>
+                  <h4 className="font-medium">
+                    {trip.fromLocation} → {trip.toLocation}
+                  </h4>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {trip.time}
+                    {new Date(trip.departureTime).toLocaleString()}
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Capacity: {trip.capacity}</span>
-                    <span className="font-medium text-green-600">{trip.earnings}</span>
+                    <span className="text-muted-foreground">
+                      Capacity: {trip.currentDeliveries}/{trip.maxDeliveries}
+                    </span>
+                    <span className="font-medium text-green-600">
+                      GH₵{trip.pricePerDelivery.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -254,7 +275,10 @@ export function DashboardOverview() {
                 <span>Total Deliveries</span>
                 <span>{user.totalDeliveries}</span>
               </div>
-              <Progress value={Math.min((user.totalDeliveries / 20) * 100, 100)} className="h-2" />
+              <Progress
+                value={Math.min((user.totalDeliveries / 20) * 100, 100)}
+                className="h-2"
+              />
               <p className="text-xs text-muted-foreground">Lifetime total</p>
             </div>
             <div className="space-y-2">
@@ -262,11 +286,19 @@ export function DashboardOverview() {
                 <span>Verification Status</span>
                 <span className="capitalize">{user.verificationStatus}</span>
               </div>
-              <Progress 
-                value={user.verificationStatus === "approved" ? 100 : user.verificationStatus === "pending" ? 50 : 0} 
-                className="h-2" 
+              <Progress
+                value={
+                  user.verificationStatus === "approved"
+                    ? 100
+                    : user.verificationStatus === "pending"
+                    ? 50
+                    : 0
+                }
+                className="h-2"
               />
-              <p className="text-xs text-muted-foreground">Account verification</p>
+              <p className="text-xs text-muted-foreground">
+                Account verification
+              </p>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -274,11 +306,13 @@ export function DashboardOverview() {
                 <span>{user.rating.toFixed(1)}/5.0</span>
               </div>
               <Progress value={(user.rating / 5) * 100} className="h-2" />
-              <p className="text-xs text-muted-foreground">Average user rating</p>
+              <p className="text-xs text-muted-foreground">
+                Average user rating
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

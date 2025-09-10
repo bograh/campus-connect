@@ -29,9 +29,9 @@ func SetupRoutes(
 	r.Use(chiMiddleware.RealIP)
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://campus-connect-liard-ten.vercel.app"},
+		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "Cookie"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,

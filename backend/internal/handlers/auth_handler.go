@@ -89,18 +89,9 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth-token",
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
-		MaxAge:   7 * 24 * 60 * 60,
-		Path:     "/",
-	})
-
 	response := map[string]interface{}{
 		"message": "User created successfully",
+		"token":   token,
 		"user": map[string]interface{}{
 			"id":                 user.ID,
 			"firstName":          user.FirstName,
@@ -142,18 +133,9 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth-token",
-		Value:    token,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
-		MaxAge:   7 * 24 * 60 * 60,
-		Path:     "/",
-	})
-
 	response := map[string]interface{}{
 		"message": "Login successful",
+		"token":   token,
 		"user": map[string]interface{}{
 			"id":                 user.ID,
 			"firstName":          user.FirstName,
@@ -167,16 +149,6 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth-token",
-		Value:    "",
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
-		MaxAge:   0,
-		Path:     "/",
-	})
-
 	utils.WriteSuccessResponse(w, "Logout successful", nil)
 }
 

@@ -22,13 +22,10 @@ export function LoginForm() {
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-
-    // Clear any existing errors
+    
     clearError();
 
-    // Basic validation for KNUST email
     if (!email.endsWith("@st.knust.edu.gh")) {
-      // This will be handled by the API, but we can provide early feedback
       console.warn("Only KNUST student emails (@st.knust.edu.gh) are allowed");
     }
 
@@ -36,7 +33,6 @@ export function LoginForm() {
       await signIn({ email, password });
       router.push("/dashboard");
     } catch (error) {
-      // Error is already handled by the useAuth hook
       console.error("Login error:", error);
     }
   };

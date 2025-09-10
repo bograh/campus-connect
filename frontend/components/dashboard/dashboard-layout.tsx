@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,11 +22,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Home, Package, Car, MessageCircle, User, Settings, LogOut, Shield, Bell, Search, MapPin } from "lucide-react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useAuth } from "@/lib/hooks"
+} from "@/components/ui/dropdown-menu";
+import {
+  Home,
+  Package,
+  Car,
+  MessageCircle,
+  User,
+  Settings,
+  LogOut,
+  Shield,
+  Bell,
+  Search,
+  MapPin,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/lib/hooks";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -37,18 +49,20 @@ const navigation = [
   { name: "Messages", href: "/dashboard/messages", icon: MessageCircle },
   { name: "Tracking", href: "/dashboard/tracking", icon: MapPin },
   { name: "Profile", href: "/dashboard/profile", icon: User },
-]
+];
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { user, logout, loading } = useAuth()
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout, loading } = useAuth();
+  const hasToken =
+    typeof window !== "undefined" && !!localStorage.getItem("auth_token");
 
-  if (!loading && !user) {
-    router.push("/login")
-    return null
+  if (!loading && !user && !hasToken) {
+    router.push("/login");
+    return null;
   }
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -57,19 +71,31 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!user) return null
+  if (!user && hasToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">
+            Restoring your session...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (!user) return null;
 
   const handleLogout = async () => {
     try {
-      await logout()
-      router.push("/")
+      await logout();
+      router.push("/");
     } catch (error) {
-      console.error("Logout error:", error)
+      console.error("Logout error:", error);
     }
-  }
+  };
 
   return (
     <SidebarProvider>
@@ -78,11 +104,17 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <SidebarHeader className="border-b border-sidebar-border">
             <div className="flex items-center gap-2 px-4 py-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">CC</span>
+                <span className="text-primary-foreground font-bold text-sm">
+                  CC
+                </span>
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-sidebar-foreground">CampusConnect</span>
-                <span className="text-xs text-sidebar-foreground/60">Student Portal</span>
+                <span className="font-semibold text-sidebar-foreground">
+                  CampusConnect
+                </span>
+                <span className="text-xs text-sidebar-foreground/60">
+                  Student Portal
+                </span>
               </div>
             </div>
           </SidebarHeader>
@@ -105,19 +137,32 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <SidebarFooter className="border-t border-sidebar-border">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-3 h-auto p-3">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 h-auto p-3"
+                >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.profileImage || "/placeholder.svg"} alt={`${user.firstName} ${user.lastName}`} />
+                    <AvatarImage
+                      src={user.profileImage || "/placeholder.svg"}
+                      alt={`${user.firstName} ${user.lastName}`}
+                    />
                     <AvatarFallback>
-                      {user.firstName[0]}{user.lastName[0]}
+                      {user.firstName[0]}
+                      {user.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
-                      {user.verificationStatus === "approved" && <Shield className="h-3 w-3 text-primary" />}
+                      <span className="text-sm font-medium">
+                        {user.firstName} {user.lastName}
+                      </span>
+                      {user.verificationStatus === "approved" && (
+                        <Shield className="h-3 w-3 text-primary" />
+                      )}
                     </div>
-                    <span className="text-xs text-muted-foreground">{user.studentId}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user.studentId}
+                    </span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -159,5 +204,5 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     </SidebarProvider>
-  )
+  );
 }

@@ -11,9 +11,19 @@ export class ApiError extends Error {
 
 export class ApiClient {
   private baseUrl: string;
+  private getAuthToken: () => string | null;
 
-  constructor(baseUrl: string = API_BASE_URL) {
+  constructor(
+    baseUrl: string = API_BASE_URL,
+    getAuthToken?: () => string | null
+  ) {
     this.baseUrl = baseUrl;
+    this.getAuthToken =
+      getAuthToken ||
+      (() =>
+        typeof window !== "undefined"
+          ? localStorage.getItem("auth_token")
+          : null);
   }
 
   private async request<T>(
@@ -23,10 +33,15 @@ export class ApiClient {
     const url = `${this.baseUrl}${endpoint}`;
 
     const isFormData = options.body instanceof FormData;
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      ...options.headers,
+      ...(options.headers as Record<string, string>),
     };
+
+    const token = this.getAuthToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
 
     const config: RequestInit = {
       headers,

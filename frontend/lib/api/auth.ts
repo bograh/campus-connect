@@ -9,6 +9,7 @@ import {
 
 export interface SignUpResponse {
   message: string;
+  token: string;
   user: {
     id: string;
     firstName: string;
@@ -21,6 +22,7 @@ export interface SignUpResponse {
 
 export interface SignInResponse {
   message: string;
+  token: string;
   user: {
     id: string;
     firstName: string;

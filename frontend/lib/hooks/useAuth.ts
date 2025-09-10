@@ -22,7 +22,6 @@ export function useAuth() {
   });
   const router = useRouter();
 
-  // Load user on mount
   useEffect(() => {
     loadUser();
   }, []);
@@ -46,8 +45,10 @@ export function useAuth() {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
       const response = await authService.signUp(userData);
+      if (response && (response as any).token) {
+        localStorage.setItem("auth_token", (response as any).token);
+      }
 
-      // After successful signup, load the full user data
       await loadUser();
 
       return response;
@@ -66,8 +67,10 @@ export function useAuth() {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
       const response = await authService.signIn(credentials);
+      if (response && (response as any).token) {
+        localStorage.setItem("auth_token", (response as any).token);
+      }
 
-      // After successful signin, load the full user data
       await loadUser();
 
       return response;
@@ -86,6 +89,7 @@ export function useAuth() {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
       await authService.logout();
+      localStorage.removeItem("auth_token");
       setAuthState({ user: null, loading: false, error: null });
       router.push("/");
     } catch (error) {
@@ -104,7 +108,6 @@ export function useAuth() {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
       const response = await authService.updateProfile(updates);
 
-      // Reload user data after update
       await loadUser();
 
       return response;
