@@ -32,6 +32,9 @@ export function useAuth() {
       const user = await authService.getCurrentUser();
       setAuthState((prev) => ({ ...prev, user, loading: false }));
     } catch (error) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_token");
+      }
       setAuthState((prev) => ({
         ...prev,
         user: null,
