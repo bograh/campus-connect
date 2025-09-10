@@ -38,7 +38,18 @@ export function DashboardOverview() {
     loadDeliveryRequests(1, 5);
   }, []);
 
+  useEffect(() => {
+    console.log("DashboardOverview: Auth state", {
+      user: user?.firstName,
+      authLoading,
+    });
+  }, [user, authLoading]);
+
   if (authLoading || !user) {
+    console.log("DashboardOverview: Showing loading state", {
+      authLoading,
+      hasUser: !!user,
+    });
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -48,6 +59,11 @@ export function DashboardOverview() {
       </div>
     );
   }
+
+  console.log(
+    "DashboardOverview: Rendering dashboard content for",
+    user.firstName
+  );
 
   const activeRequests = requests
     ? requests.filter((r) => r.status === "pending").length

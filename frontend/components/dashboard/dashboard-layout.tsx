@@ -55,38 +55,96 @@ const navigation = [
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, error } = useAuth();
 
   useEffect(() => {
+    console.log("DashboardLayout: Auth state changed", {
+      user: !!user,
+      loading,
+      error,
+    });
+
     if (typeof window === "undefined") return;
 
     const hasToken = !!localStorage.getItem("auth_token");
+    console.log("DashboardLayout: Token check", { hasToken });
 
+    // Only redirect if we're sure there's no authentication
     if (!loading && !user && !hasToken) {
+      console.log(
+        "DashboardLayout: Redirecting to login - no user and no token"
+      );
       router.push("/login");
     }
-  }, [loading, user, router]);
+  }, [loading, user, error, router]);
 
+  // Show loading state while auth is being determined
   if (loading) {
+    console.log("DashboardLayout: Showing loading state");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">
+            Loading your dashboard...
+          </p>
         </div>
       </div>
     );
   }
 
-  if (typeof window !== "undefined") {
+  // Handle authentication errors
+  if (error && typeof window !== "undefined") {
     const hasToken = !!localStorage.getItem("auth_token");
-    if (!user && !hasToken) {
+    if (hasToken && !user) {
+      console.log(
+        "DashboardLayout: Auth error with token, clearing and redirecting"
+      );
+      localStorage.removeItem("auth_token");
       router.push("/login");
-      return null;
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-muted-foreground">
+              Session expired. Redirecting to login...
+            </p>
+          </div>
+        </div>
+      );
     }
   }
 
-  if (!user) return null;
+  // Final check for user authentication
+  if (!user) {
+    console.log("DashboardLayout: No user, checking token...");
+    if (typeof window !== "undefined") {
+      const hasToken = !!localStorage.getItem("auth_token");
+      if (!hasToken) {
+        console.log("DashboardLayout: No token, redirecting to login");
+        router.push("/login");
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-muted-foreground">Redirecting to login...</p>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    // If we have a token but no user, wait a bit more
+    console.log("DashboardLayout: Have token but no user, showing loading");
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log("DashboardLayout: Rendering dashboard for user:", user.firstName);
 
   const handleLogout = async () => {
     try {

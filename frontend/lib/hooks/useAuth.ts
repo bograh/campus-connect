@@ -28,20 +28,29 @@ export function useAuth() {
 
   const loadUser = async () => {
     try {
+      console.log("useAuth: Starting loadUser");
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
       const token =
         typeof window !== "undefined"
           ? localStorage.getItem("auth_token")
           : null;
+
+      console.log("useAuth: Token exists:", !!token);
+
       if (!token) {
+        console.log("useAuth: No token found, setting user to null");
         setAuthState((prev) => ({ ...prev, user: null, loading: false }));
         return;
       }
+
+      console.log("useAuth: Fetching current user");
       const user = await authService.getCurrentUser();
+      console.log("useAuth: User loaded successfully:", user?.firstName);
       setAuthState((prev) => ({ ...prev, user, loading: false }));
     } catch (error) {
-      console.error("loadUser failed:", error);
+      console.error("useAuth: loadUser failed:", error);
       if (error instanceof ApiError && error.status === 401) {
+        console.log("useAuth: 401 error, removing invalid token");
         if (typeof window !== "undefined") {
           localStorage.removeItem("auth_token");
         }

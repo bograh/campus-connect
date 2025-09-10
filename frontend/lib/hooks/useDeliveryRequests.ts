@@ -38,12 +38,19 @@ export function useDeliveryRequests(options: UseDeliveryRequestsOptions = {}) {
   // Load delivery requests
   const loadDeliveryRequests = async (pageNum?: number, limitNum?: number) => {
     try {
+      console.log("useDeliveryRequests: Loading requests", {
+        pageNum,
+        limitNum,
+      });
       setState((prev) => ({ ...prev, loading: true, error: null }));
       const data = await deliveryRequestsService.getDeliveryRequests({
         page: pageNum || page,
         limit: limitNum || limit,
       });
 
+      console.log("useDeliveryRequests: Loaded successfully", {
+        count: data.deliveryRequests.length,
+      });
       setState((prev) => ({
         ...prev,
         requests: data.deliveryRequests,
@@ -53,6 +60,7 @@ export function useDeliveryRequests(options: UseDeliveryRequestsOptions = {}) {
         loading: false,
       }));
     } catch (error) {
+      console.error("useDeliveryRequests: Load failed", error);
       setState((prev) => ({
         ...prev,
         loading: false,

@@ -39,15 +39,20 @@ export function BrowseTrips() {
   const [vehicleFilter, setVehicleFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { trips, loading, error, loadTrips } = useTrips({
+  const { trips, loading, error, totalTrips, loadTrips } = useTrips({
     page: 1,
     limit: 20,
     autoLoad: false,
   });
 
   useEffect(() => {
+    console.log("BrowseTrips: Loading trips...");
     loadTrips(1, 20);
   }, []);
+
+  useEffect(() => {
+    console.log("BrowseTrips state:", { trips, loading, error, totalTrips });
+  }, [trips, loading, error, totalTrips]);
 
   const vehicleTypes = [
     { value: "all", label: "All Vehicles" },
@@ -373,7 +378,15 @@ export function BrowseTrips() {
       {error && (
         <Card>
           <CardContent className="text-center py-4 text-red-600">
-            {error}
+            <h3 className="font-semibold mb-2">Error loading trips</h3>
+            <p>{error}</p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => loadTrips(1, 20)}
+            >
+              Try Again
+            </Button>
           </CardContent>
         </Card>
       )}

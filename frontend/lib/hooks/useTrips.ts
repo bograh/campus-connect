@@ -192,15 +192,18 @@ export function useMyTrips() {
   // Load user's trips
   const loadMyTrips = async () => {
     try {
+      console.log("useMyTrips: Loading user trips");
       setState((prev) => ({ ...prev, loading: true, error: null }));
       const trips = await tripsService.getMyTrips();
 
+      console.log("useMyTrips: Loaded successfully", { count: trips.length });
       setState((prev) => ({
         ...prev,
         myTrips: trips,
         loading: false,
       }));
     } catch (error) {
+      console.error("useMyTrips: Load failed", error);
       setState((prev) => ({
         ...prev,
         loading: false,
