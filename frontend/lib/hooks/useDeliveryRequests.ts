@@ -61,10 +61,17 @@ export function useDeliveryRequests(options: UseDeliveryRequestsOptions = {}) {
       }));
     } catch (error) {
       console.error("useDeliveryRequests: Load failed", error);
+      // Don't let delivery request API errors affect authentication
+      // The browse requests endpoint is public and should not cause auth issues
+      const errorMessage = handleApiError(error);
+      console.log("useDeliveryRequests: Error details", {
+        error,
+        errorMessage,
+      });
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: handleApiError(error),
+        error: errorMessage,
       }));
     }
   };
@@ -186,5 +193,72 @@ export function useDeliveryRequests(options: UseDeliveryRequestsOptions = {}) {
     goToPage,
     clearError,
     refresh: () => loadDeliveryRequests(),
+  };
+}
+
+interface UseDeliveryRequestOptions {
+  requestId: string;
+  autoLoad?: boolean;
+}
+
+interface DeliveryRequestState {
+  request: DeliveryRequest | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useDeliveryRequest(options: UseDeliveryRequestOptions) {
+  const [state, setState] = useState<DeliveryRequestState>({
+    request: null,
+    loading: false,
+    error: null,
+  });
+
+  const loadDeliveryRequest = async () => {
+    if (!options.requestId) return;
+
+    try {
+      console.log("useDeliveryRequest: Loading request", options.requestId);
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+      const request = await deliveryRequestsService.getDeliveryRequestById(
+        options.requestId
+      );
+      console.log(
+        "useDeliveryRequest: Loaded successfully",
+        request.itemDescription
+      );
+      setState((prev) => ({ ...prev, request, loading: false }));
+    } catch (error) {
+      console.error("useDeliveryRequest: Load failed", error);
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: handleApiError(error),
+      }));
+    }
+  };
+
+  const clearError = () => {
+    setState((prev) => ({ ...prev, error: null }));
+  };
+
+  const refresh = () => {
+    loadDeliveryRequest();
+  };
+
+  // Auto-load on mount if enabled
+  useEffect(() => {
+    if (options.autoLoad !== false && options.requestId) {
+      loadDeliveryRequest();
+    }
+  }, [options.requestId]);
+
+  return {
+    request: state.request,
+    loading: state.loading,
+    error: state.error,
+    loadDeliveryRequest,
+    clearError,
+    refresh,
   };
 }

@@ -93,12 +93,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Handle authentication errors
+  // Handle authentication errors more defensively
   if (error && typeof window !== "undefined") {
     const hasToken = !!localStorage.getItem("auth_token");
-    if (hasToken && !user) {
+    // Only redirect if we have a token but authentication specifically failed (401)
+    // Don't redirect for network errors or other API failures
+    if (hasToken && !user && error.includes("401")) {
       console.log(
-        "DashboardLayout: Auth error with token, clearing and redirecting"
+        "DashboardLayout: 401 auth error with token, clearing and redirecting"
       );
       localStorage.removeItem("auth_token");
       router.push("/login");

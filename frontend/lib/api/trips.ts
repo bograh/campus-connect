@@ -45,6 +45,11 @@ export class TripsService {
     };
   }
 
+  async getTripById(id: string): Promise<Trip> {
+    const response = await apiClient.get<Trip>(`/api/trips/${id}`);
+    return response;
+  }
+
   /**
    * Create a new trip offering
    * Requires authentication

@@ -62,18 +62,30 @@ export function useAuth() {
       setAuthState((prev) => ({ ...prev, user, loading: false }));
     } catch (error) {
       console.error("useAuth: loadUser failed:", error);
+      // Only clear token on 401 errors from the /me endpoint specifically
+      // Don't clear token for network errors or other API failures
       if (error instanceof ApiError && error.status === 401) {
-        console.log("useAuth: 401 error, removing invalid token");
+        console.log(
+          "useAuth: 401 error from /me endpoint, removing invalid token"
+        );
         if (typeof window !== "undefined") {
           localStorage.removeItem("auth_token");
         }
+        setAuthState((prev) => ({
+          ...prev,
+          user: null,
+          loading: false,
+          error: handleApiError(error),
+        }));
+      } else {
+        // For other errors, don't clear the user but show the error
+        console.log("useAuth: Non-401 error, keeping current auth state");
+        setAuthState((prev) => ({
+          ...prev,
+          loading: false,
+          error: handleApiError(error),
+        }));
       }
-      setAuthState((prev) => ({
-        ...prev,
-        user: null,
-        loading: false,
-        error: handleApiError(error),
-      }));
     }
   };
 

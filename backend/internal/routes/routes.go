@@ -83,6 +83,7 @@ func SetupRoutes(
 
 		r.Route("/delivery-requests", func(r chi.Router) {
 			r.With(authMiddleware.OptionalAuth).Get("/", deliveryHandler.GetDeliveryRequests)
+			r.With(authMiddleware.OptionalAuth).Get("/{id}", deliveryHandler.GetDeliveryRequestByID)
 
 			r.Group(func(r chi.Router) {
 				r.Use(authMiddleware.RequireAuth)
@@ -94,6 +95,7 @@ func SetupRoutes(
 
 		r.Route("/trips", func(r chi.Router) {
 			r.With(authMiddleware.OptionalAuth).Get("/", tripHandler.GetTrips)
+			r.With(authMiddleware.OptionalAuth).Get("/{id}", tripHandler.GetTripDetails)
 
 			r.Group(func(r chi.Router) {
 				r.Use(authMiddleware.RequireAuth)
