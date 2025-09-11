@@ -47,6 +47,13 @@ export class DeliveryRequestsService {
     };
   }
 
+  async getDeliveryRequestById(id: string): Promise<DeliveryRequest> {
+    const response = await apiClient.get<{ deliveryRequest: DeliveryRequest }>(
+      `/api/delivery-requests/${id}`
+    );
+    return response.deliveryRequest;
+  }
+
   /**
    * Create a new delivery request
    * Requires authentication

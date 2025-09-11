@@ -64,10 +64,14 @@ export function useTrips(options: UseTripsOptions = {}) {
       }));
     } catch (error) {
       console.error("useTrips: Load failed", error);
+      // Don't let trip API errors affect authentication
+      // The browse trips endpoint is public and should not cause auth issues
+      const errorMessage = handleApiError(error);
+      console.log("useTrips: Error details", { error, errorMessage });
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: handleApiError(error),
+        error: errorMessage,
       }));
     }
   };
@@ -240,5 +244,73 @@ export function useTripUtils() {
     canJoinTrip: tripsService.canJoinTrip,
     formatDepartureTime: tripsService.formatDepartureTime,
     getAvailableSpots: tripsService.getAvailableSpots,
+  };
+}
+
+// Hook for fetching a single trip
+interface UseTripOptions {
+  tripId: string;
+  autoLoad?: boolean;
+}
+
+interface TripState {
+  trip: Trip | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useTrip(options: UseTripOptions) {
+  const [state, setState] = useState<TripState>({
+    trip: null,
+    loading: false,
+    error: null,
+  });
+
+  const loadTrip = async () => {
+    if (!options.tripId) return;
+
+    try {
+      console.log("useTrip: Loading trip", options.tripId);
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+      const trip = await tripsService.getTripById(options.tripId);
+      console.log(
+        "useTrip: Loaded successfully",
+        trip.fromLocation,
+        "to",
+        trip.toLocation
+      );
+      setState((prev) => ({ ...prev, trip, loading: false }));
+    } catch (error) {
+      console.error("useTrip: Load failed", error);
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: handleApiError(error),
+      }));
+    }
+  };
+
+  const clearError = () => {
+    setState((prev) => ({ ...prev, error: null }));
+  };
+
+  const refresh = () => {
+    loadTrip();
+  };
+
+  // Auto-load on mount if enabled
+  useEffect(() => {
+    if (options.autoLoad !== false && options.tripId) {
+      loadTrip();
+    }
+  }, [options.tripId]);
+
+  return {
+    trip: state.trip,
+    loading: state.loading,
+    error: state.error,
+    loadTrip,
+    clearError,
+    refresh,
   };
 }

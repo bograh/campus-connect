@@ -11,6 +11,7 @@ import (
 	"campus-connect/internal/repositories"
 	"campus-connect/internal/utils"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -128,6 +129,32 @@ func (h *DeliveryHandler) GetDeliveryRequests(w http.ResponseWriter, r *http.Req
 	}
 
 	utils.WriteSuccessResponse(w, "Delivery requests retrieved successfully", response)
+}
+
+func (h *DeliveryHandler) GetDeliveryRequestByID(w http.ResponseWriter, r *http.Request) {
+	requestIDStr := chi.URLParam(r, "id")
+	if requestIDStr == "" {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Request ID is required")
+		return
+	}
+
+	requestID, err := uuid.Parse(requestIDStr)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid request ID format")
+		return
+	}
+
+	deliveryRequest, err := h.deliveryRepo.GetByID(requestID)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusNotFound, "Delivery request not found")
+		return
+	}
+
+	response := map[string]interface{}{
+		"deliveryRequest": deliveryRequest,
+	}
+
+	utils.WriteSuccessResponse(w, "Delivery request retrieved successfully", response)
 }
 
 func (h *DeliveryHandler) OfferDelivery(w http.ResponseWriter, r *http.Request) {

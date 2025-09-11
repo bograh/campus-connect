@@ -11,6 +11,7 @@ import (
 	"campus-connect/internal/repositories"
 	"campus-connect/internal/utils"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -132,7 +133,7 @@ func (h *TripHandler) GetTrips(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TripHandler) GetTripDetails(w http.ResponseWriter, r *http.Request) {
-	tripIDStr := r.URL.Path[len("/api/trips/"):]
+	tripIDStr := chi.URLParam(r, "id")
 	if tripIDStr == "" {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "Trip ID is required")
 		return
