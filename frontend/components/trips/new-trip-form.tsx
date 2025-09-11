@@ -115,28 +115,47 @@ export function NewTripForm() {
     }
 
     try {
-      // Map UI to API payload (see API_USAGE.md)
+      // Ensure price is valid (must be > 0 per API validation)
+      const pricePerDelivery = formData.pricePerItem
+        ? parseFloat(formData.pricePerItem)
+        : 5.0; // Default minimum price
+
       const availableSeats = formData.capacity
         ? parseInt(formData.capacity)
         : 1;
-      const pricePerDelivery = formData.pricePerItem
-        ? parseFloat(formData.pricePerItem)
-        : 0;
-      // Map vehicleType UI -> backend enum
-      const vt = (formData.vehicleType || "car").toLowerCase();
-      const vehicleType =
-        vt === "bike" ? "bicycle" : vt === "suv" || vt === "truck" ? "car" : vt;
 
+      // Map frontend vehicleType to backend vehicleType (API valid values)
+      const vehicleTypeMap: Record<string, string> = {
+        car: "car",
+        suv: "car",
+        truck: "car",
+        bike: "bicycle",
+        bicycle: "bicycle",
+        motorcycle: "motorcycle",
+        motorbike: "motorcycle",
+        walking: "walking",
+        public_transport: "public_transport",
+        bus: "public_transport",
+        "tro-tro": "public_transport",
+      };
+
+      const vehicleType =
+        vehicleTypeMap[formData.vehicleType?.toLowerCase()] || "car";
+
+      // Format departure time - API expects "HH:MM" format
+      const departureTime = formData.departureTime || "08:00";
+
+      // Create trip matching API specification exactly
       await createTrip({
         fromLocation: formData.fromLocation,
         toLocation: formData.toLocation,
-        departureDate: formData.departureDate,
-        departureTime: formData.departureTime,
+        departureDate: formData.departureDate, // Format: "2025-01-15"
+        departureTime, // Format: "08:00"
         availableSeats,
         pricePerDelivery,
-        vehicleType: vehicleType as any,
+        vehicleType, // Valid values: "car", "motorcycle", "bicycle", "walking", "public_transport"
         description: formData.description || undefined,
-        contactInfo: "Contact via app",
+        contactInfo: "WhatsApp: Contact via CampusConnect app",
       });
 
       router.push("/dashboard/trips");
