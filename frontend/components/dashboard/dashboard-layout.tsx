@@ -35,7 +35,6 @@ import {
   Shield,
   Bell,
   Search,
-  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -69,7 +68,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     const hasToken = !!localStorage.getItem("auth_token");
     console.log("DashboardLayout: Token check", { hasToken });
 
-    // Only redirect if we're sure there's no authentication
     if (!loading && !user && !hasToken) {
       console.log(
         "DashboardLayout: Redirecting to login - no user and no token"
@@ -78,7 +76,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   }, [loading, user, error, router]);
 
-  // Show loading state while auth is being determined
   if (loading) {
     console.log("DashboardLayout: Showing loading state");
     return (
@@ -93,11 +90,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Handle authentication errors more defensively
   if (error && typeof window !== "undefined") {
     const hasToken = !!localStorage.getItem("auth_token");
-    // Only redirect if we have a token but authentication specifically failed (401)
-    // Don't redirect for network errors or other API failures
     if (hasToken && !user && error.includes("401")) {
       console.log(
         "DashboardLayout: 401 auth error with token, clearing and redirecting"
@@ -116,37 +110,51 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // Final check for user authentication
-  if (!user) {
-    console.log("DashboardLayout: No user, checking token...");
-    if (typeof window !== "undefined") {
-      const hasToken = !!localStorage.getItem("auth_token");
-      if (!hasToken) {
-        console.log("DashboardLayout: No token, redirecting to login");
-        router.push("/login");
-        return (
-          <div className="min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-muted-foreground">Redirecting to login...</p>
-            </div>
-          </div>
-        );
-      }
-    }
+  // if (!user) {
+  //   console.log("DashboardLayout: No user, checking token...");
+  //   if (typeof window !== "undefined") {
+  //     const hasToken = !!localStorage.getItem("auth_token");
+  //     if (!hasToken) {
+  //       console.log("DashboardLayout: No token, redirecting to login");
+  //       router.push("/login");
+  //       return (
+  //         <div className="min-h-screen flex items-center justify-center">
+  //           <div className="text-center">
+  //             <p className="text-muted-foreground">Redirecting to login...</p>
+  //           </div>
+  //         </div>
+  //       );
+  //     }
+  //   }
 
-    // If we have a token but no user, wait a bit more
-    console.log("DashboardLayout: Have token but no user, showing loading");
+  //   console.log("DashboardLayout: Have token but no user, showing loading");
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+  //         <p className="mt-4 text-muted-foreground">Authenticating...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  const hasToken = !!localStorage.getItem("auth_token");
+  if (!hasToken) {
+    console.log("DashboardLayout: No token, redirecting to login");
+    router.push("/login");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Authenticating...</p>
+          <p className="text-muted-foreground">Redirecting to login...</p>
         </div>
       </div>
     );
   }
 
-  console.log("DashboardLayout: Rendering dashboard for user:", user.firstName);
+  console.log(
+    "DashboardLayout: Rendering dashboard for user:",
+    user?.firstName
+  );
 
   const handleLogout = async () => {
     try {
@@ -203,25 +211,25 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage
-                      src={user.profileImage || "/placeholder.svg"}
-                      alt={`${user.firstName} ${user.lastName}`}
+                      src={user?.profileImage || "/placeholder.svg"}
+                      alt={`${user?.firstName} ${user?.lastName}`}
                     />
                     <AvatarFallback>
-                      {user.firstName[0]}
-                      {user.lastName[0]}
+                      {user?.firstName[0]}
+                      {user?.lastName[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col items-start text-left">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">
-                        {user.firstName} {user.lastName}
+                        {user?.firstName} {user?.lastName}
                       </span>
-                      {user.verificationStatus === "approved" && (
+                      {user?.verificationStatus === "approved" && (
                         <Shield className="h-3 w-3 text-primary" />
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {user.studentId}
+                      {user?.studentId}
                     </span>
                   </div>
                 </Button>
