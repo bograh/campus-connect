@@ -76,7 +76,6 @@ export function NewRequestForm() {
     setIsLoading(true);
     setError("");
 
-    // Basic validation
     if (
       !formData.title ||
       !formData.description ||
@@ -97,9 +96,15 @@ export function NewRequestForm() {
     try {
       const paymentAmount = formData.budget
         ? Number.parseFloat(formData.budget)
-        : 0;
-      const priority = (formData.urgency as any) || "normal";
-      // Derive pickup date/time from deadline if provided; otherwise use current time
+        : 5.0;
+
+      const urgencyToPriorityMap: Record<string, string> = {
+        low: "low",
+        medium: "normal",
+        high: "high",
+      };
+      const priority = urgencyToPriorityMap[formData.urgency] || "normal";
+
       const dateObj = formData.deadline
         ? new Date(formData.deadline)
         : new Date();
@@ -120,7 +125,7 @@ export function NewRequestForm() {
         paymentAmount,
         pickupDate,
         pickupTime,
-        contactInfo: "Contact via app",
+        contactInfo: "Contact via CampusConnect app",
         specialInstructions: formData.specialInstructions || undefined,
       });
 
