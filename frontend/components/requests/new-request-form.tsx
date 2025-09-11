@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState } from "react";
 import { useDeliveryRequests } from "@/lib/hooks";
-import { handleApiError } from "@/lib/api";
+import { handleApiError, Priority } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -47,7 +47,7 @@ export function NewRequestForm() {
   });
 
   const categories = [
-    "Food & Beverages",
+    // "Food & Beverages",
     "Books & Supplies",
     "Packages & Mail",
     "Groceries",
@@ -98,7 +98,7 @@ export function NewRequestForm() {
         ? Number.parseFloat(formData.budget)
         : 5.0;
 
-      const urgencyToPriorityMap: Record<string, string> = {
+      const urgencyToPriorityMap: Record<string, Priority> = {
         low: "low",
         medium: "normal",
         high: "high",
