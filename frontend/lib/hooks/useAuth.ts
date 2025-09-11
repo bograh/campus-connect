@@ -31,7 +31,7 @@ export function useAuth() {
         setAuthState((prev) => ({
           ...prev,
           loading: false,
-          error: "Authentication timeout. Please try signing in again.",
+          error: "",
         }));
       }
     }, 5000);
