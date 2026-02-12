@@ -1,4 +1,4 @@
-# Campus Connect 🚗📦
+# Campus Connect 
 
 A secure, full-stack student delivery and carpooling platform designed specifically for KNUST students. Campus Connect enables verified peer-to-peer delivery services and trip sharing, fostering a safe and connected campus community.
 
@@ -9,18 +9,18 @@ A secure, full-stack student delivery and carpooling platform designed specifica
 
 ---
 
-## 🎯 Features
+##  Features
 
-- **🔐 Secure Authentication**: KNUST email verification with JWT tokens and bcrypt password hashing
-- **📦 Delivery Requests**: Create and browse delivery requests, match with available trips
-- **🚗 Trip Management**: Create trips, join/leave trips, and offer delivery services
-- **👤 Profile Management**: User profiles with Cloudinary-powered image uploads
-- **✉️ Email Verification**: Integrated email service for account verification
-- **🛡️ Security**: CORS protection, HTTP-only cookies, SQL injection prevention
+- ** Secure Authentication**: KNUST email verification with JWT tokens and bcrypt password hashing
+- ** Delivery Requests**: Create and browse delivery requests, match with available trips
+- ** Trip Management**: Create trips, join/leave trips, and offer delivery services
+- ** Profile Management**: User profiles with Cloudinary-powered image uploads
+- ** Email Verification**: Integrated email service for account verification
+- ** Security**: CORS protection, HTTP-only cookies, SQL injection prevention
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 Campus Connect follows a modern full-stack architecture with clear separation of concerns:
 
@@ -79,7 +79,7 @@ Campus Connect follows a modern full-stack architecture with clear separation of
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 campus-connect/
@@ -146,7 +146,7 @@ campus-connect/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -309,7 +309,7 @@ GET    /health               - API health check
 
 ---
 
-## 🔒 Security Features
+##  Security Features
 
 - **JWT Authentication**: Secure token-based authentication with HTTP-only cookies
 - **Password Security**: Bcrypt hashing with salt rounds
@@ -321,7 +321,7 @@ GET    /health               - API health check
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Backend
 ```bash
@@ -337,7 +337,7 @@ npm run test
 
 ---
 
-## 🏗️ Building for Production
+##  Building for Production
 
 ### Backend
 ```bash
@@ -364,7 +364,7 @@ npm start
 
 ---
 
-## 🔄 Application Flow
+##  Application Flow
 
 ### 1. User Registration & Authentication
 ```
@@ -402,7 +402,7 @@ User → Uploads profile picture
 
 ---
 
-## 🌐 Deployment
+##  Deployment
 
 ### Backend Deployment
 
@@ -431,7 +431,7 @@ User → Uploads profile picture
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -454,19 +454,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 👥 Team
+##  Team
 
 Developed by the Campus Connect Team
 
 ---
 
-## 🐛 Issues & Support
+##  Issues & Support
 
 Found a bug or have a feature request? Please open an issue on [GitHub Issues](https://github.com/kwabsntim/campus-connect/issues).
 
 ---
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Go Documentation](https://golang.org/doc/)
